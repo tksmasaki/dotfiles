@@ -14,7 +14,7 @@ export EDITOR="vim"
 export PAGER=less
 export LESS='-giXRMS'
 
-# ============================== Zinit ==============================
+# ============================== Zinit
 # https://github.com/zdharma-continuum/zinit
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
@@ -43,9 +43,9 @@ zinit light-mode for \
 	zsh-users/zsh-autosuggestions \
 	zdharma-continuum/fast-syntax-highlighting \
 	zdharma-continuum/history-search-multi-word
-# ============================== End Zinit ==============================
+# ============================== End Zinit
 
-# ============================== Theme ==============================
+# ============================== Theme
 # https://github.com/romkatv/powerlevel10k
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
@@ -56,17 +56,17 @@ fi
 zinit ice depth=1; zinit light romkatv/powerlevel10k
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-# ============================== End Theme ==============================
+# ============================== End Theme
 
-# ============================== Carapace ==============================
+# ============================== Carapace
 # https://pixi.carapace.sh
 autoload -U compinit && compinit
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
 zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 source <(carapace _carapace)
-# ============================== End Carapace ==============================
+# ============================== End Carapace
 
-# ============================== aliases ==============================
+# ============================== aliases
 alias ls='ls -F --color=auto'
 alias ll='ls -lF --color=auto'
 alias la='ls -AF --color=auto'
@@ -96,4 +96,4 @@ alias gpusf='git push --force-with-lease'
 alias gs='git status'
 alias gsw='git switch'
 alias gswc='git switch -c'
-# ============================== End aliases ==============================
+# ============================== End aliases
