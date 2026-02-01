@@ -2,7 +2,6 @@
 
 echo "Setting up zsh environment..."
 
-chsh -s /bin/zsh
 export SHELL="/bin/zsh"
 
 # https://github.com/zsh-users/zsh-autosuggestions
