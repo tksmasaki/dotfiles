@@ -9,5 +9,6 @@ mise use -g carapace@latest
 
 cp $(pwd)/.p10k.zsh ~/.p10k.zsh
 ln -sf $(pwd)/.zshrc ~/.zshrc
+zinit self-update
 
 echo "zsh environment setup complete."
