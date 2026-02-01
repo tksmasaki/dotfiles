@@ -2,15 +2,13 @@
 
 echo "Setting up zsh environment..."
 
-# https://github.com/zsh-users/zsh-autosuggestions
-mkdir -p ~/.zsh
-git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
+# https://github.com/zdharma-continuum/zinit
+bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)"
 # https://pixi.carapace.sh
 mise use -g carapace@latest
 
-echo "" >> ~/.zshrc
-echo "# Load dotfiles configuration" >> ~/.zshrc
-cat ~/dotfiles/.zshrc >> ~/.zshrc
+ln -sf $(pwd)/.zshrc ~/.zshrc
 source ~/.zshrc
+zinit self-update
 
 echo "zsh environment setup complete."

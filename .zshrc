@@ -14,7 +14,59 @@ export EDITOR="vim"
 export PAGER=less
 export LESS='-giXRMS'
 
-# === aliases ===
+# ============================== Zinit ==============================
+# https://github.com/zdharma-continuum/zinit
+### Added by Zinit's installer
+if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
+    print -P "%F{33} %F{220}Installing %F{33}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
+    command mkdir -p "$HOME/.local/share/zinit" && command chmod g-rwX "$HOME/.local/share/zinit"
+    command git clone https://github.com/zdharma-continuum/zinit "$HOME/.local/share/zinit/zinit.git" && \
+        print -P "%F{33} %F{34}Installation successful.%f%b" || \
+        print -P "%F{160} The clone has failed.%f%b"
+fi
+
+source "$HOME/.local/share/zinit/zinit.git/zinit.zsh"
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
+
+# Load a few important annexes, without Turbo
+# (this is currently required for annexes)
+zinit light-mode for \
+	zdharma-continuum/zinit-annex-as-monitor \
+	zdharma-continuum/zinit-annex-bin-gem-node \
+	zdharma-continuum/zinit-annex-patch-dl \
+	zdharma-continuum/zinit-annex-rust
+
+### End of Zinit's installer chunk
+# Zinit plugins
+zinit light-mode for \
+	zsh-users/zsh-autosuggestions \
+	zdharma-continuum/fast-syntax-highlighting \
+	zdharma-continuum/history-search-multi-word
+# ============================== End Zinit ==============================
+
+# ============================== Theme ==============================
+# https://github.com/romkatv/powerlevel10k
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+zinit ice depth=1; zinit light romkatv/powerlevel10k
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# ============================== End Theme ==============================
+
+# ============================== Carapace ==============================
+# https://pixi.carapace.sh
+autoload -U compinit && compinit
+export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
+zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+source <(carapace _carapace)
+# ============================== End Carapace ==============================
+
+# ============================== aliases ==============================
 alias ls='ls -F --color=auto'
 alias ll='ls -lF --color=auto'
 alias la='ls -AF --color=auto'
@@ -25,6 +77,7 @@ alias rm='rm -i'
 alias mkdir='mkdir -p'
 alias grep='grep --color=auto'
 alias sudo='sudo '
+alias sz='source ~/.zshrc'
 # git
 alias g='git'
 alias gb='git branch -vv'
@@ -43,12 +96,4 @@ alias gpusf='git push --force-with-lease'
 alias gs='git status'
 alias gsw='git switch'
 alias gswc='git switch -c'
-# === end aliases ===
-
-# https://github.com/zsh-users/zsh-autosuggestions
-source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
-# https://pixi.carapace.sh
-autoload -U compinit && compinit
-export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
-zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
-source <(carapace _carapace)
+# ============================== End aliases ==============================
