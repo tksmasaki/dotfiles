@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Setting up zsh environment..."
+
 chsh -s /bin/zsh
 export SHELL="/bin/zsh"
 
@@ -13,3 +15,5 @@ echo "" >> ~/.zshrc
 echo "# Load dotfiles configuration" >> ~/.zshrc
 cat ~/dotfiles/.zshrc >> ~/.zshrc
 source ~/.zshrc
+
+echo "zsh environment setup complete."
