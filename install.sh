@@ -8,5 +8,5 @@ mise use -g carapace@latest
 
 echo "" >> ~/.zshrc
 echo "# Load dotfiles configuration" >> ~/.zshrc
-echo "source ~/dotfiles/.zshrc" >> ~/.zshrc
+cat ~/dotfiles/.zshrc >> ~/.zshrc
 source ~/.zshrc
