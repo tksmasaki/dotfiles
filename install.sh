@@ -2,8 +2,6 @@
 
 echo "Setting up zsh environment..."
 
-export SHELL="/bin/zsh"
-
 # https://github.com/zsh-users/zsh-autosuggestions
 mkdir -p ~/.zsh
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
