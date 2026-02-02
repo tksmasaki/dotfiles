@@ -106,6 +106,7 @@ alias gpusf='git push --force-with-lease'
 alias gs='git status'
 alias gsw='git switch'
 alias gswc='git switch -c'
+alias galias='git config --get-regexp ^alias'
 # ruby
 alias gemclean='gem uninstall -I -a -x --user-install --force'
 alias be='bundle exec'
