@@ -15,7 +15,7 @@ export PAGER=less
 export LESS='-giXRMS'
 
 # ============================== version manager
-mise activate zsh
+eval "$(mise activate zsh)"
 # ============================== End version manager
 
 # ============================== Zinit
