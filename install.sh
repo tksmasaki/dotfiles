@@ -38,6 +38,7 @@ else
 	echo "Zinit is already installed"
 fi
 
+echo "Source .zshrc"
 # Allow .zshrc errors (some tools may not be set up yet)
 set +e
 source ~/.zshrc
@@ -46,7 +47,6 @@ set -e
 echo "Compile Zinit"
 zinit self-update
 
-mise trust ~/dotfiles/mise.toml
 echo "Run mise install"
 mise install
 
