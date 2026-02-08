@@ -30,6 +30,15 @@ else
 	echo "mise is already installed"
 fi
 
+echo "Source .zshrc"
+# Allow .zshrc errors (some tools may not be set up yet)
+set +e
+source ~/.zshrc
+set -e
+
+echo "Run mise install"
+mise install
+
 # https://github.com/zdharma-continuum/zinit
 if [ ! -d "$HOME/.local/share/zinit/zinit.git" ]; then
 	echo "Install Zinit"
@@ -46,9 +55,6 @@ set -e
 
 echo "Compile Zinit"
 zinit self-update
-
-echo "Run mise install"
-mise install
 
 # Run local setup if --local option was specified
 if [ "$LOCAL_SETUP" = true ]; then
