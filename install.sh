@@ -30,6 +30,8 @@ else
 	echo "mise is already installed"
 fi
 
+echo "Trust mise configuration"
+mise trust ~/dotfiles/mise.toml
 echo "Source .zshrc"
 # Allow .zshrc errors (some tools may not be set up yet)
 set +e
