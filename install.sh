@@ -18,11 +18,26 @@ done
 
 # Create symbolic links to dotfiles in home directory
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ln -sf "$SCRIPT_DIR/zsh/.zshrc" ~/.zshrc
+ln -sf "$SCRIPT_DIR/vim/.vimrc" ~/.vimrc
+ln -sf "$SCRIPT_DIR/git/.gitmessage.txt" ~/.gitmessage.txt
+ln -sf "$SCRIPT_DIR/powerlevel10k/.p10k.zsh" ~/.p10k.zsh
 mkdir -p ~/.config/mise
 ln -sf "$SCRIPT_DIR/mise/config.toml" ~/.config/mise/config.toml
-ln -sf "$SCRIPT_DIR/.zshrc" ~/.zshrc
-ln -sf "$SCRIPT_DIR/.vimrc" ~/.vimrc
-ln -sf "$SCRIPT_DIR/powerlevel10k/.p10k.zsh" ~/.p10k.zsh
+mkdir -p ~/.config/sheldon
+ln -sf "$SCRIPT_DIR/sheldon/plugins.toml" ~/.config/sheldon/plugins.toml
+
+# https://brew.sh
+if ! command -v brew > /dev/null 2>&1; then
+	echo "Install Homebrew"
+	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+else
+	echo "Homebrew is already installed"
+fi
+
+# https://sheldon.cli.rs
+echo "Install sheldon"
+brew install sheldon
 
 # https://mise.jdx.dev
 if ! command -v mise > /dev/null 2>&1; then
@@ -32,33 +47,16 @@ else
 	echo "mise is already installed"
 fi
 
+echo "Source .zshrc"
+# Allow .zshrc errors (some tools may not be set up yet)
+set +e
+source ~/.zshrc
+set -e
+
 echo "Trust mise configuration"
 mise trust ~/.config/mise/config.toml
-echo "Source .zshrc"
-# Allow .zshrc errors (some tools may not be set up yet)
-set +e
-source ~/.zshrc
-set -e
-
 echo "Run mise install"
 mise install
-
-# https://github.com/zdharma-continuum/zinit
-if [[ ! -d "$HOME/.local/share/zinit/zinit.git" ]]; then
-	echo "Install Zinit"
-	yes "n" | bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)"
-else
-	echo "Zinit is already installed"
-fi
-
-echo "Source .zshrc"
-# Allow .zshrc errors (some tools may not be set up yet)
-set +e
-source ~/.zshrc
-set -e
-
-echo "Compile Zinit"
-zinit self-update
 
 # Run local setup if --local option was specified
 if [[ "$LOCAL_SETUP" = true ]]; then
