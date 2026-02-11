@@ -43,7 +43,7 @@ brew install sheldon
 # https://mise.jdx.dev
 if ! command -v mise > /dev/null 2>&1; then
   echo "Install mise"
-	curl https://mise.run | sh
+	brew install mise
 else
 	echo "mise is already installed"
 fi
