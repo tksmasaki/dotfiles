@@ -22,9 +22,6 @@ github = "romkatv/zsh-defer"
 [plugins.base16]
 github = "chriskempson/base16-shell"
 
-[plugins.powerlevel10k]
-github = "romkatv/powerlevel10k"
-
 # ---------------------------- Deferred loading
 [plugins.enhancd]
 github = "b4b4r07/enhancd"

@@ -21,7 +21,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ln -sf "$SCRIPT_DIR/zsh/.zshrc" ~/.zshrc
 ln -sf "$SCRIPT_DIR/vim/.vimrc" ~/.vimrc
 ln -sf "$SCRIPT_DIR/git/.gitmessage.txt" ~/.gitmessage.txt
-ln -sf "$SCRIPT_DIR/powerlevel10k/.p10k.zsh" ~/.p10k.zsh
+mkdir -p ~/.config
+ln -sf "$SCRIPT_DIR/starship/starship.toml" ~/.config/starship.toml
 mkdir -p ~/.config/mise
 ln -sf "$SCRIPT_DIR/mise/config.toml" ~/.config/mise/config.toml
 mkdir -p ~/.config/sheldon
