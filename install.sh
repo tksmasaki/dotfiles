@@ -54,12 +54,10 @@ set +e
 source ~/.zshrc
 set -e
 
-cd ~
 echo "Trust mise configuration"
 mise trust ~/.config/mise/config.toml
 echo "Run mise install"
-mise install
-cd "$SCRIPT_DIR"
+mise install --cd ~
 
 # Run local setup if --local option was specified
 if [[ "$LOCAL_SETUP" = true ]]; then
