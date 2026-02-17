@@ -38,6 +38,8 @@ else
 	echo "Homebrew is already installed"
 fi
 
+echo "install neovim"
+brew install neovim
 # https://sheldon.cli.rs
 echo "Install sheldon"
 brew install sheldon
