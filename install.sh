@@ -55,6 +55,7 @@ fi
 echo "Source .zshrc"
 # Allow .zshrc errors (some tools may not be set up yet)
 set +e
+# shellcheck disable=SC1090
 source ~/.zshrc
 set -e
 
