@@ -18,7 +18,7 @@ HISTORY_IGNORE="(l[sla]|lla|pwd|history|ps)"
 HISTSIZE=10000
 SAVEHIST=10000
 
-export EDITOR="vim"
+export EDITOR="nvim"
 export PAGER=less
 export LESS='-giXRMS'
 
@@ -53,10 +53,8 @@ alias mkdir='mkdir -p'
 alias grep='grep --color=auto'
 alias sudo='sudo '
 alias sz='source ~/.zshrc'
-alias viz='vi ~/.zshrc'
+alias vz='nvim ~/.zshrc'
 alias cz='code ~/.zshrc'
-alias vigc='vi ~/.gitconfig'
-alias cgc='code ~/.gitconfig'
 # git
 alias g='git'
 alias gb='git branch -vv'

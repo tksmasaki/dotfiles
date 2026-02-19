@@ -1,4 +1,4 @@
-let mapleader = " "
+inoremap <silent> jj <ESC>
 
 filetype plugin indent on
 syntax on
