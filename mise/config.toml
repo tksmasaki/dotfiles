@@ -1,1 +1,3 @@
 [tools]
+fzf = "latest"
+zoxide = "latest"

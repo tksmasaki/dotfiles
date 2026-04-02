@@ -40,6 +40,15 @@ eval "$(sheldon source)"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 # ============================== End Shell Prompt
 
+# ============================== fzf
+# Set up fzf key bindings and fuzzy completion
+source <(fzf --zsh)
+# ============================== End fzf
+
+# ============================== zoxide
+eval "$(zoxide init zsh)"
+# ============================== End zoxide
+
 # ============================== aliases
 abbr -S -f ls='ls -F --color=auto'
 abbr -S -f cp='cp -i'
