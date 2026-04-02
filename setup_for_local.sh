@@ -5,8 +5,8 @@ echo "Execution: setup_for_local.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p ~/.config/ghostty
-ln -sf "$SCRIPT_DIR/ghostty/config" ~/.config/ghostty/config
-ln -sf "$SCRIPT_DIR/local/mise.local.toml" ~/mise.local.toml
+ln -sf "$SCRIPT_DIR/dot_config/ghostty/config" ~/.config/ghostty/config
+ln -sf "$SCRIPT_DIR/mise.local.toml" ~/mise.local.toml
 
 echo "Trust local mise configuration"
 mise trust ~/mise.local.toml

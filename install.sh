@@ -58,7 +58,7 @@ echo "Run mise install"
 mise install --cd ~
 
 echo "Apply dotfiles with chezmoi"
-chezmoi init --source="$SCRIPT_DIR" --apply
+chezmoi init --apply
 
 # Run local setup if --local option was specified
 if [[ "$LOCAL_SETUP" = true ]]; then
