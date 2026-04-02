@@ -104,6 +104,7 @@ abbr -S dcz='devcontainer exec --remote-env TERM=xterm-256color zsh'
 abbr -S -f cm='chezmoi'
 abbr -S cmcd='chezmoi cd'
 abbr -S cmap='chezmoi apply'
+abbr -S cdots="code $(chezmoi source-path)"
 # ============================== End aliases
 
 #	============================== repository manager
