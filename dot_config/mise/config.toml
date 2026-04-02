@@ -1,5 +1,4 @@
 [tools]
-chezmoi = "latest"
 fzf = "latest"
 ghq = "latest"
 zoxide = "latest"

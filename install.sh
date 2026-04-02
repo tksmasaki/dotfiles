@@ -47,9 +47,15 @@ else
 	echo "mise is already installed"
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-mkdir -p ~/.config/mise
-cp "$SCRIPT_DIR/dot_config/mise/config.toml" ~/.config/mise/config.toml
+if ! command -v chezmoi > /dev/null 2>&1; then
+	echo "Install chezmoi"
+	brew install chezmoi
+else
+	echo "chezmoi is already installed"
+fi
+
+echo "Apply dotfiles with chezmoi"
+chezmoi init --apply tksmasaki
 
 eval "$(mise activate zsh)"
 echo "Trust mise configuration"
@@ -57,12 +63,10 @@ mise trust ~/.config/mise/config.toml
 echo "Run mise install"
 mise install --cd ~
 
-echo "Apply dotfiles with chezmoi"
-chezmoi init --apply
-
 # Run local setup if --local option was specified
 if [[ "$LOCAL_SETUP" = true ]]; then
   echo "Running local setup..."
+	SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   "$SCRIPT_DIR/setup_for_local.sh"
 fi
 
