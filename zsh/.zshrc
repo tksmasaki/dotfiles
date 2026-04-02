@@ -58,7 +58,7 @@ abbr -S sz='source ~/.zshrc'
 abbr -S vz='nvim ~/.zshrc'
 abbr -S cz='code ~/.zshrc'
 # git
-abbr -S g='git'
+abbr -S -f g='git'
 abbr -S gb='git branch -vv'
 abbr -S gbd='git branch -D'
 abbr -S gco='git checkout'
@@ -86,7 +86,7 @@ abbr -S al='act --list'
 # docker
 abbr -S dit='docker exec -it'
 # VSCode: https://code.visualstudio.com/docs/setup/mac#_launching-from-the-command-line
-abbr -S c='code'
+abbr -S -f c='code'
 abbr -S cn='code -n'
 abbr -S cr='code -r'
 # devcontainer
