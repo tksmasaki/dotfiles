@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -e
 set -o pipefail
-echo "Execute install.sh"
+echo "Execution: install.sh"
 
 # Parse command line options
 LOCAL_SETUP=false
@@ -41,11 +41,20 @@ else
 	echo "Homebrew is already installed"
 fi
 
-echo "install neovim"
-brew install neovim
+if ! command -v nvim > /dev/null 2>&1; then
+	echo "Install neovim"
+	brew install neovim
+else
+	echo "Neovim is already installed"
+fi
+
 # https://sheldon.cli.rs
-echo "Install sheldon"
-brew install sheldon
+if ! command -v sheldon > /dev/null 2>&1; then
+	echo "Install sheldon"
+	brew install sheldon
+else
+	echo "sheldon is already installed"
+fi
 
 # https://mise.jdx.dev
 if ! command -v mise > /dev/null 2>&1; then
@@ -73,4 +82,4 @@ if [[ "$LOCAL_SETUP" = true ]]; then
   "$SCRIPT_DIR/setup_for_local.sh"
 fi
 
-echo "install.sh execution completed"
+echo "Completion: install.sh"

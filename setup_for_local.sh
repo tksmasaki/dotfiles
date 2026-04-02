@@ -1,12 +1,17 @@
 #!/bin/zsh
 set -e
 set -o pipefail
-echo "Execute setup_for_local.sh"
+echo "Execution: setup_for_local.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p ~/.config/ghostty
 ln -sf "$SCRIPT_DIR/ghostty/config" ~/.config/ghostty/config
-ln -sf "$SCRIPT_DIR/mise/mise.local.toml" ~/mise.local.toml
+ln -sf "$SCRIPT_DIR/local/mise.local.toml" ~/mise.local.toml
+
+echo "Trust local mise configuration"
+mise trust ~/mise.local.toml
+echo "Run local mise install"
+mise install --cd ~
 
 # https://github.com/github/copilot-cli
 if ! command -v copilot > /dev/null 2>&1; then
@@ -24,4 +29,4 @@ else
 	echo "Claude Code is already installed"
 fi
 
-echo "setup_for_local.sh execution completed"
+echo "Completion: setup_for_local.sh"
