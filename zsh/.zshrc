@@ -102,5 +102,21 @@ abbr -S cr='code -r'
 abbr -S dcz='devcontainer exec --remote-env TERM=xterm-256color zsh'
 # ============================== End aliases
 
+#	============================== repository manager
+# cd into selected repository
+cdrepo() {
+  local selected_dir=$(ghq list | fzf -1 +m) && cd "$(ghq root)/$selected_dir"
+}
+
+# Open selected repository in VSCode
+crepo() {
+  local selected_dir=$(ghq list | fzf -1 +m) &&
+  echo "Open $(ghq root)/$selected_dir in VSCode"
+  if [ -n "$selected_dir" ]; then
+		code "$(ghq root)/$selected_dir"
+  fi
+}
+#	============================== End repository manager
+
 # Load ~/local/.zshrc if it exists
 [[ -f ~/local/.zshrc ]] && source ~/local/.zshrc
