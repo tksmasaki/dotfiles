@@ -57,6 +57,7 @@ mise trust ~/.config/mise/config.toml
 echo "Run mise install"
 mise install --cd ~
 
+echo "Apply dotfiles with chezmoi"
 chezmoi init --source="$SCRIPT_DIR" --apply
 
 # Run local setup if --local option was specified
