@@ -16,23 +16,6 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-# Create symbolic links to dotfiles in home directory
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ln -sf "$SCRIPT_DIR/zsh/.zshrc" ~/.zshrc
-ln -sf "$SCRIPT_DIR/vim/.vimrc" ~/.vimrc
-ln -sf "$SCRIPT_DIR/powerlevel10k/.p10k.zsh" ~/.p10k.zsh
-mkdir -p ~/.config
-mkdir -p ~/.config/git
-ln -sf "$SCRIPT_DIR/git/config" ~/.config/git/config
-ln -sf "$SCRIPT_DIR/git/ignore" ~/.config/git/ignore
-ln -sf "$SCRIPT_DIR/git/.gitmessage.txt" ~/.config/git/.gitmessage.txt
-mkdir -p ~/.config/nvim
-ln -sf "$SCRIPT_DIR/nvim/init.vim" ~/.config/nvim/init.vim
-mkdir -p ~/.config/mise
-ln -sf "$SCRIPT_DIR/mise/config.toml" ~/.config/mise/config.toml
-mkdir -p ~/.config/sheldon
-ln -sf "$SCRIPT_DIR/sheldon/plugins.toml" ~/.config/sheldon/plugins.toml
-
 # https://brew.sh
 if ! command -v brew > /dev/null 2>&1; then
 	echo "Install Homebrew"
@@ -64,17 +47,17 @@ else
 	echo "mise is already installed"
 fi
 
-echo "Source .zshrc"
-# Allow .zshrc errors (some tools may not be set up yet)
-set +e
-# shellcheck disable=SC1090
-source ~/.zshrc
-set -e
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+mkdir -p ~/.config/mise
+cp "$SCRIPT_DIR/dot_config/mise/config.toml" ~/.config/mise/config.toml
 
+eval "$(mise activate zsh)"
 echo "Trust mise configuration"
 mise trust ~/.config/mise/config.toml
 echo "Run mise install"
 mise install --cd ~
+
+chezmoi init --source="$SCRIPT_DIR" --apply
 
 # Run local setup if --local option was specified
 if [[ "$LOCAL_SETUP" = true ]]; then
