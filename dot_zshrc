@@ -109,12 +109,12 @@ abbr -S cdots="code $(chezmoi source-path)"
 
 #	============================== repository manager
 # cd into selected repository
-cdrepo() {
+rr() {
   local selected_dir=$(ghq list | fzf -1 +m) && cd "$(ghq root)/$selected_dir"
 }
 
 # Open selected repository in VSCode
-crepo() {
+crr() {
   local selected_dir=$(ghq list | fzf -1 +m) &&
   echo "Open $(ghq root)/$selected_dir in VSCode"
   if [ -n "$selected_dir" ]; then
