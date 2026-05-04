@@ -1,4 +1,5 @@
 [tools]
 fzf = "latest"
 ghq = "latest"
+jq = "latest"
 zoxide = "latest"
