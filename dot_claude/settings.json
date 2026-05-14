@@ -4,5 +4,6 @@
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
+  "theme": "dark",
   "language": "japanese"
 }
