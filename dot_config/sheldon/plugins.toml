@@ -37,9 +37,9 @@ apply = ["defer"]
 github = "zdharma-continuum/history-search-multi-word"
 apply = ["defer"]
 
-[plugins.zsh-autocomplete]
-github = "marlonrichert/zsh-autocomplete"
-apply = ["defer"]
+# [plugins.zsh-autocomplete]
+# github = "marlonrichert/zsh-autocomplete"
+# apply = ["defer"]
 
 [plugins.zsh-autosuggestions]
 github = "zsh-users/zsh-autosuggestions"
