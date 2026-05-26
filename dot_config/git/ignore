@@ -3,3 +3,5 @@
 .idea
 .claude/settings.local.json
 mise.local.toml
+.env
+.mcp.json
