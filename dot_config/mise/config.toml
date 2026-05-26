@@ -1,4 +1,5 @@
 [tools]
+direnv = "latest"
 fzf = "latest"
 gh = "latest"
 ghq = "latest"

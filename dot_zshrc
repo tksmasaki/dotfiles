@@ -2,7 +2,7 @@
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+	source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
 bindkey -e
@@ -48,6 +48,10 @@ source <(fzf --zsh)
 # ============================== zoxide
 eval "$(zoxide init zsh)"
 # ============================== End zoxide
+
+# ============================== direnv
+eval "$(direnv hook zsh)"
+# ============================== End direnv
 
 # ============================== aliases
 abbr -S -f ls='ls -F --color=auto'
@@ -110,16 +114,16 @@ abbr -S cdots="code $(chezmoi source-path)"
 #	============================== repository manager
 # cd into selected repository
 rr() {
-  local selected_dir=$(ghq list | fzf -1 +m) && cd "$(ghq root)/$selected_dir"
+	local selected_dir=$(ghq list | fzf -1 +m) && cd "$(ghq root)/$selected_dir"
 }
 
 # Open selected repository in VSCode
 crr() {
-  local selected_dir=$(ghq list | fzf -1 +m) &&
-  echo "Open $(ghq root)/$selected_dir in VSCode"
-  if [ -n "$selected_dir" ]; then
+	local selected_dir=$(ghq list | fzf -1 +m) &&
+		echo "Open $(ghq root)/$selected_dir in VSCode"
+	if [ -n "$selected_dir" ]; then
 		code "$(ghq root)/$selected_dir"
-  fi
+	fi
 }
 #	============================== End repository manager
 
