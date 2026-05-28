@@ -5,3 +5,4 @@
 .env
 .mcp.json
 .envrc
+mise.local.toml
