@@ -19,6 +19,9 @@ github = "olets/zsh-abbr"
 github = "zsh-users/zsh-autosuggestions"
 use = ["{{ name }}.zsh"]
 
+[plugins.starship]
+inline = 'eval "$(starship init zsh)"'
+
 # NOTE: zsh-syntax-highlighting must be the last plugin
 [plugins.zsh-syntax-highlighting]
 github = "zsh-users/zsh-syntax-highlighting"
