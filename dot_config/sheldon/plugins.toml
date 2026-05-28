@@ -12,40 +12,13 @@
 
 shell = "zsh"
 
-[templates]
-defer = "{{ hooks?.pre | nl }}{% for file in files %}zsh-defer source \"{{ file }}\"\n{% endfor %}{{ hooks?.post | nl }}"
-
-# ----------------------------
-[plugins.zsh-defer]
-github = "romkatv/zsh-defer"
-
-[plugins.base16]
-github = "chriskempson/base16-shell"
-
-[plugins.powerlevel10k]
-github = "romkatv/powerlevel10k"
-
 [plugins.zsh-abbr]
 github = "olets/zsh-abbr"
-
-# ---------------------------- Deferred loading
-[plugins.enhancd]
-github = "b4b4r07/enhancd"
-apply = ["defer"]
-
-[plugins.history-search-multi-word]
-github = "zdharma-continuum/history-search-multi-word"
-apply = ["defer"]
-
-# [plugins.zsh-autocomplete]
-# github = "marlonrichert/zsh-autocomplete"
-# apply = ["defer"]
 
 [plugins.zsh-autosuggestions]
 github = "zsh-users/zsh-autosuggestions"
 use = ["{{ name }}.zsh"]
-apply = ["defer"]
 
+# NOTE: zsh-syntax-highlighting must be the last plugin
 [plugins.zsh-syntax-highlighting]
 github = "zsh-users/zsh-syntax-highlighting"
-apply = ["defer"]
