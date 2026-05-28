@@ -11,7 +11,7 @@ HISTORY_IGNORE="(l[sla]|lla|pwd|history|ps)"
 HISTSIZE=10000
 SAVEHIST=10000
 
-export EDITOR="nvim"
+export EDITOR="vim"
 export PAGER=less
 export LESS='-giXRMS'
 export ABBR_QUIETER=1
@@ -50,14 +50,13 @@ abbr -S -f ln='ln -i'
 abbr -S -f mkdir='mkdir -p'
 abbr -S -f grep='grep --color=auto'
 abbr -S -f sudo='sudo '
-abbr -S -f vi='nvim'
-abbr -S -f vim='nvim'
+abbr -S -f vi='vim'
 abbr -S ll='ls -lF --color=auto'
 abbr -S la='ls -AF --color=auto'
 abbr -S lla='ls -lAF --color=auto'
 abbr -S cpr='cp -ir'
 abbr -S sz='source ~/.zshrc'
-abbr -S vz='nvim ~/.zshrc'
+abbr -S vz='vim ~/.zshrc'
 abbr -S cz='code ~/.zshrc'
 # git
 abbr -S -f g='git'
@@ -78,7 +77,7 @@ abbr -S gs='git status'
 abbr -S gsw='git switch'
 abbr -S gswc='git switch -c'
 abbr -S galias='git config --get-regexp ^alias'
-abbr -S gexclude='nvim .git/info/exclude'
+abbr -S gexclude='vim .git/info/exclude'
 # ruby
 abbr -S gemclean='gem uninstall -I -a -x --user-install --force'
 abbr -S be='bundle exec'
@@ -99,6 +98,8 @@ abbr -S -f cm='chezmoi'
 abbr -S cmcd='chezmoi cd'
 abbr -S cmap='chezmoi apply'
 abbr -S cdots="code $(chezmoi source-path)"
+# Alacritty
+abbr -S val='vim ~/.config/alacritty/alacritty.toml'
 # ============================== End aliases
 
 #	============================== repository manager

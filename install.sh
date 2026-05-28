@@ -24,13 +24,6 @@ else
 	echo "Homebrew is already installed"
 fi
 
-if ! command -v nvim > /dev/null 2>&1; then
-	echo "Install neovim"
-	brew install neovim
-else
-	echo "Neovim is already installed"
-fi
-
 # https://sheldon.cli.rs
 if ! command -v sheldon > /dev/null 2>&1; then
 	echo "Install sheldon"

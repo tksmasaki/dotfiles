@@ -1,0 +1,7 @@
+[window]
+opacity = 0.8
+
+[font]
+size = 14.0
+normal = { family = "HackGen Console NF", style="Regular" }
+bold = { family = "HackGen Console NF", style="Bold" }
