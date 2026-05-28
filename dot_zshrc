@@ -15,6 +15,7 @@ export EDITOR="nvim"
 export PAGER=less
 export LESS='-giXRMS'
 export ABBR_QUIETER=1
+export ABBR_SET_EXPANSION_CURSOR=1
 
 # ============================== version manager
 # https://mise.jdx.dev
@@ -49,6 +50,7 @@ abbr -S -f ln='ln -i'
 abbr -S -f mkdir='mkdir -p'
 abbr -S -f grep='grep --color=auto'
 abbr -S -f sudo='sudo '
+abbr -S -f vi='nvim'
 abbr -S -f vim='nvim'
 abbr -S ll='ls -lF --color=auto'
 abbr -S la='ls -AF --color=auto'
@@ -76,6 +78,7 @@ abbr -S gs='git status'
 abbr -S gsw='git switch'
 abbr -S gswc='git switch -c'
 abbr -S galias='git config --get-regexp ^alias'
+abbr -S gexclude='nvim .git/info/exclude'
 # ruby
 abbr -S gemclean='gem uninstall -I -a -x --user-install --force'
 abbr -S be='bundle exec'
