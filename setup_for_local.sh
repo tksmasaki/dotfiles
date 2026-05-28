@@ -3,16 +3,6 @@ set -e
 set -o pipefail
 echo "Execution: setup_for_local.sh"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-mkdir -p ~/.config/ghostty
-ln -sf "$SCRIPT_DIR/dot_config/ghostty/config" ~/.config/ghostty/config
-ln -sf "$SCRIPT_DIR/mise.local.toml" ~/mise.local.toml
-
-echo "Trust local mise configuration"
-mise trust ~/mise.local.toml
-echo "Run local mise install"
-mise install --cd ~
-
 # https://github.com/github/copilot-cli
 if ! command -v copilot > /dev/null 2>&1; then
 	echo "Install GitHub Copilot CLI"
