@@ -47,6 +47,13 @@ else
 	echo "chezmoi is already installed"
 fi
 
+# https://github.com/alacritty/alacritty/releases
+if [[ ! -d "/Applications/Alacritty.app" ]]; then
+	echo "Alacritty is not installed. Please install it from: https://github.com/alacritty/alacritty/releases"
+else
+	echo "Alacritty is already installed"
+fi
+
 echo "Apply dotfiles with chezmoi"
 chezmoi init --apply tksmasaki
 
