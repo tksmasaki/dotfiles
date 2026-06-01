@@ -80,6 +80,10 @@ abbr -S gsw='git switch'
 abbr -S gswc='git switch -c'
 abbr -S galias='git config --get-regexp ^alias'
 abbr -S gexclude='vim .git/info/exclude'
+# claude
+abbr -S cla='claude'
+abbr -S clac='claude --continue'
+abbr -S clar='claude --resume'
 # ruby
 abbr -S gemclean='gem uninstall -I -a -x --user-install --force'
 abbr -S be='bundle exec'
