@@ -58,6 +58,8 @@ abbr -S cpr='cp -ir'
 abbr -S sz='source ~/.zshrc'
 abbr -S vz='vim ~/.zshrc'
 abbr -S cz='code ~/.zshrc'
+abbr -S clz="code ~/local/.zshrc"
+abbr -S vlz="vim ~/local/.zshrc"
 # git
 abbr -S -f g='git'
 abbr -S gb='git branch -vv'
