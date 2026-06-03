@@ -1,10 +1,12 @@
 #!/bin/bash
-IFS=$'\t' read -r MODEL PCT DIR FIVE_H WEEK < <(jq -r '[
+IFS=$'\t' read -r MODEL PCT DIR FIVE_H FIVE_RESET WEEK WEEK_RESET < <(jq -r '[
     .model.display_name,
     (.context_window.used_percentage // 0 | floor),
     (.workspace.current_dir // ""),
     (.rate_limits.five_hour.used_percentage // ""),
-    (.rate_limits.seven_day.used_percentage // "")
+    (.rate_limits.five_hour.resets_at // ""),
+    (.rate_limits.seven_day.used_percentage // ""),
+    (.rate_limits.seven_day.resets_at // "")
 ] | @tsv')
 
 GREEN=$'\033[32m'
@@ -30,8 +32,14 @@ BAR=""
 [ "$EMPTY" -gt 0 ] && printf -v PAD "%${EMPTY}s" && BAR="${BAR}${PAD// /░}"
 
 LIMITS=""
-[ -n "$FIVE_H" ] && LIMITS="5h: $(printf '%.0f' "$FIVE_H")%"
-[ -n "$WEEK" ] && LIMITS="${LIMITS:+$LIMITS }7d: $(printf '%.0f' "$WEEK")%"
+if [ -n "$FIVE_H" ]; then
+	LIMITS="5h: $(printf '%.0f' "$FIVE_H")%"
+	[ -n "$FIVE_RESET" ] && LIMITS="$LIMITS ($(date -r "$FIVE_RESET" +%H:%M))"
+fi
+if [ -n "$WEEK" ]; then
+	LIMITS="${LIMITS:+$LIMITS }7d: $(printf '%.0f' "$WEEK")%"
+	[ -n "$WEEK_RESET" ] && LIMITS="$LIMITS ($(date -r "$WEEK_RESET" '+%a %H:%M'))"
+fi
 
 if git -C "$DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 	BRANCH=$(git -C "$DIR" branch --show-current 2>/dev/null)
