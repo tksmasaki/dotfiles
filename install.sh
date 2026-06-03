@@ -54,6 +54,13 @@ else
 	echo "Alacritty is already installed"
 fi
 
+if ! command -v herdr > /dev/null 2>&1; then
+	echo "Install herdr"
+  brew install herdr
+else
+	echo "herdr is already installed"
+fi
+
 echo "Apply dotfiles with chezmoi"
 chezmoi init --apply tksmasaki
 
