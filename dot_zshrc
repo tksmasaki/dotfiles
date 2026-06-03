@@ -76,7 +76,7 @@ abbr -S gpulrmain='git pull --rebase origin main'
 abbr -S gpulrmaster='git pull --rebase origin master'
 abbr -S gpusf='git push --force-with-lease'
 abbr -S gs='git status'
-abbr -S gsw='git switch'
+# abbr -S gsw='git switch'
 abbr -S gswc='git switch -c'
 abbr -S galias='git config --get-regexp ^alias'
 abbr -S gexclude='vim .git/info/exclude'
@@ -111,18 +111,30 @@ abbr -S val='vim ~/.config/alacritty/alacritty.toml'
 #	============================== repository manager
 # cd into selected repository
 rr() {
-	local selected_dir=$(ghq list | fzf -1 +m) && cd "$(ghq root)/$selected_dir"
+	local selected_dir=$(ghq list | fzf --height=40% --layout=reverse) && cd "$(ghq root)/$selected_dir"
 }
 
 # Open selected repository in VSCode
 crr() {
-	local selected_dir=$(ghq list | fzf -1 +m) &&
+	local selected_dir=$(ghq list | fzf --height=40% --layout=reverse) &&
 		echo "Open $(ghq root)/$selected_dir in VSCode"
 	if [ -n "$selected_dir" ]; then
 		code "$(ghq root)/$selected_dir"
 	fi
 }
 #	============================== End repository manager
+
+# ============================== Switch to selected local branch
+gsw() {
+	local selected_branch
+	selected_branch=$(
+		git branch \
+			--sort=-committerdate \
+			--format='%(refname:short)' |
+		fzf --height=40% --layout=reverse
+	) || return
+	git switch "$selected_branch"
+}
 
 # Load ~/local/.zshrc if it exists
 [[ -f ~/local/.zshrc ]] && source ~/local/.zshrc
