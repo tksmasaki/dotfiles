@@ -107,7 +107,8 @@ abbr -S cdots="code $(chezmoi source-path)"
 # Alacritty
 abbr -S val='vim ~/.config/alacritty/alacritty.toml'
 # herdr
-abbr -S hwdot='herdr workspace create --cwd ~/.local/share/chezmoi --label "dotfiles"'
+abbr -S hwcs='herdr workspace create --cwd ~/src --label "src"'
+abbr -S hwcd='herdr workspace create --cwd ~/.local/share/chezmoi --label "dotfiles"'
 # ============================== End aliases
 
 #	============================== repository manager
