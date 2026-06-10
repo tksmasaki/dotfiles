@@ -60,6 +60,7 @@ abbr -S vz='vim ~/.zshrc'
 abbr -S cz='code ~/.zshrc'
 abbr -S clz="code ~/local/.zshrc"
 abbr -S vlz="vim ~/local/.zshrc"
+abbr -S cdocs='code ~/Documents/vault'
 # git
 abbr -S -f g='git'
 abbr -S gb='git branch -vv'
