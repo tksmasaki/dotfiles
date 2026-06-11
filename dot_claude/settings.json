@@ -1,11 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "opus[1m]",
+  "language": "japanese",
+  "theme": "dark",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
-  "language": "japanese",
-  "theme": "dark",
   "permissions": {
     "allow": [
       "Bash(gh pr view *)",
@@ -129,6 +130,19 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/herdr-agent-state.sh working",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); f=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"'); [[ \"$f\" == *.md ]] || exit 0; npx markdownlint-cli2 --fix \"$f\" >/dev/null 2>&1; result=$(npx markdownlint-cli2 \"$f\" 2>&1); code=$?; [ $code -eq 0 ] && exit 0; jq -n --arg ctx \"markdownlint-cli2 (auto-fix 適用後の残エラー):\\n$result\" '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":$ctx}}'",
+            "timeout": 30,
+            "statusMessage": "Running markdownlint..."
           }
         ]
       }
