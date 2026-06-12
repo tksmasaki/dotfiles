@@ -2,12 +2,26 @@
 
 ## md ファイル出力先
 
-「md ファイルに出して」などの指示があった場合は、以下の優先順位で出力先を決定する：
+### 出力先の決定ルール
 
-1. git ブランチ名が `<prefix>/<branch-name>` の形式（例: `feature/123-add-new-feature`）であれば、prefix を除いたブランチ名を抽出して `~/Documents/vault/issues/<branch-name>/` に出力する
+「md ファイルに出して」などの指示があった場合、以下のルールで出力先を決定する。
+
+#### auto mode の場合（確認なし）
+
+1. セッション中に出力先が指定済みであれば、その出力先を使う
+2. git ブランチ名が `<prefix>/<branch-name>` の形式（例: `feature/123-add-new-feature`）であれば、prefix を除いたブランチ名を抽出して `~/Documents/vault/issues/<branch-name>/` に出力する
    - branch-name の抽出: `git rev-parse --abbrev-ref HEAD | sed 's|^[^/]*/||'`
    - `main` ブランチや `/` を含まないブランチはデフォルトを使う
-2. それ以外は `~/Documents/vault/claude-logs/`（デフォルト）に出力する
+3. それ以外は `~/Documents/vault/`（デフォルト）に出力する
+
+#### 通常モードの場合
+
+- **セッション初回の md 出力時**は、出力先をユーザーに選択させる（`AskUserQuestion` ツールを使う）：
+  - `default` - `~/Documents/vault/`
+  - ブランチ名フォルダ - git ブランチが `<prefix>/<branch-name>` 形式なら `~/Documents/vault/issues/<branch-name>/`（該当しない場合はこの選択肢を出さない）
+  - 直接入力
+- 選択した出力先を**セッション中のデフォルト出力先**として記憶し、2回目以降は確認なしで使用する
+- **出力先の変更指示**（「今後は〜に出して」など）があった場合は、記憶しているデフォルト出力先を更新し、それ以降はその出力先を使う
 
 出力先ディレクトリは `mkdir -p` で作成してから書き出す。
 
