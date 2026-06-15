@@ -37,10 +37,6 @@ source <(fzf --zsh)
 eval "$(zoxide init zsh)"
 # ============================== End zoxide
 
-# ============================== direnv
-eval "$(direnv hook zsh)"
-# ============================== End direnv
-
 # ============================== aliases
 abbr -S -f ls='ls -F --color=auto'
 abbr -S -f cp='cp -i'
