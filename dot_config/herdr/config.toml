@@ -8,6 +8,8 @@ delivery = "system"
 prefix = "ctrl+q"
 previous_workspace = "prefix+up"
 next_workspace     = "prefix+down"
+next_tab           = "ctrl+tab"
+previous_tab       = "ctrl+shift+tab"
 
 [keys.indexed]
 workspaces = "ctrl+shift"
