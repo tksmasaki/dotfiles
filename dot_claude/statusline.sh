@@ -56,7 +56,12 @@ if git -C "$DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 	[ "$MODIFIED" -gt 0 ] && GIT_STATUS="${GIT_STATUS}${YELLOW}~${MODIFIED}${RESET}"
 	[ "$UNTRACKED" -gt 0 ] && GIT_STATUS="${GIT_STATUS}${RED}?${UNTRACKED}${RESET}"
 
-	LOCATION="${DIR##*/} | $BRANCH${GIT_STATUS:+ $GIT_STATUS}"
+	{ read -r GIT_DIR; read -r GIT_COMMON_DIR; } < <(git -C "$DIR" rev-parse --path-format=absolute --git-dir --git-common-dir 2>/dev/null)
+	if [ -n "$GIT_DIR" ] && [ "$GIT_DIR" != "$GIT_COMMON_DIR" ]; then
+		LOCATION="$BRANCH${GIT_STATUS:+ $GIT_STATUS}"
+	else
+		LOCATION="${DIR##*/} | $BRANCH${GIT_STATUS:+ $GIT_STATUS}"
+	fi
 else
 	LOCATION="${DIR##*/}"
 fi

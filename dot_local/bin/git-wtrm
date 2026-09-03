@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+# git wtrm - 複数の worktree をまとめて削除し、紐づいていたローカルブランチも削除する
+set -uo pipefail
+
+progname="git wtrm"
+
+usage() {
+  cat <<'USAGE_EOF'
+usage: git wtrm [options] <target>...
+
+複数の git worktree をまとめて削除する。
+削除した worktree に紐づいていたローカルブランチも既定で削除する。
+<target> は worktree のパス / ブランチ名 / ディレクトリ名 のいずれかで指定できる。
+
+options:
+  -f, --force         未コミットの変更や追跡外ファイルがあっても worktree を削除する
+                      (2 回指定で locked な worktree も削除)
+  -D, --force-branch  未マージのブランチも削除する (git branch -D 相当)
+      --keep-branch   ブランチを削除せず worktree だけ削除する
+  -n, --dry-run       実際には削除せず、対象だけ表示する
+      --no-prune      最後の `git worktree prune` を実行しない
+  -h, --help          このヘルプを表示する
+
+notes:
+  - -f と -D は独立している。-f は worktree の削除だけを強制し、ブランチ削除には
+    影響しない。未マージのコミットを捨てるときは -D を明示すること。
+  - 既定のブランチ削除は `git branch -d` なので、未マージのブランチは残る。
+    squash merge したブランチもここでは未マージ扱いになるため -D が要る。
+  - detached HEAD の worktree にはブランチ削除は行わない。
+  - ディレクトリ名での指定が複数の worktree に一致する場合はエラーにする。
+  - 自分がいる worktree も削除できるが、削除後はシェルの cwd が存在しなくなる。
+
+examples:
+  git wtrm ../wt/feature-a ../wt/feature-b
+  git wtrm ../wt/*                 # シェルの glob をそのまま渡す
+  git wtrm feature/login hotfix    # ブランチ名で指定
+  git wtrm -n ../wt/*              # 何が消えるか先に確認
+  git wtrm -D ../wt/*              # 未マージのブランチも消す
+USAGE_EOF
+}
+
+force=0
+force_branch=0
+keep_branch=0
+dry=0
+prune=1
+targets=()
+
+while (( $# )); do
+  case "$1" in
+    -f|--force)         force=$((force + 1)) ;;
+    -ff)                force=$((force + 2)) ;;
+    -D|--force-branch)  force_branch=1 ;;
+    --keep-branch)      keep_branch=1 ;;
+    -n|--dry-run)       dry=1 ;;
+    --no-prune)         prune=0 ;;
+    -h|--help)          usage; exit 0 ;;
+    --)                 shift; while (( $# )); do targets+=("$1"); shift; done; break ;;
+    -*)                 printf '%s: 不明なオプション: %s\n' "$progname" "$1" >&2; usage >&2; exit 2 ;;
+    *)                  targets+=("$1") ;;
+  esac
+  shift
+done
+
+if (( ${#targets[@]} == 0 )); then
+  usage >&2
+  exit 2
+fi
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  printf '%s: git リポジトリの中で実行してください\n' "$progname" >&2
+  exit 1
+fi
+
+orig_pwd=$(pwd -P)
+
+# "パス<TAB>ブランチ" の一覧を作る (detached HEAD はブランチが空)
+wt_list=$(git worktree list --porcelain | awk '
+  /^worktree /  { if (p != "") print p "\t" b; p = substr($0, 10); b = "" }
+  /^branch /    { b = substr($0, 8) }
+  END           { if (p != "") print p "\t" b }
+')
+
+main_wt=$(printf '%s\n' "$wt_list" | head -n1 | cut -f1)
+
+# 引数 1 つに一致する "パス<TAB>ブランチ" を、最高スコアのものすべて出力する。
+# 2 行以上返ったら指定が曖昧ということ。
+resolve() {
+  local want=$1 abs=""
+  if [ -d "$want" ]; then
+    abs=$(cd "$want" 2>/dev/null && pwd -P) || abs=""
+  fi
+  printf '%s\n' "$wt_list" | awk -F'\t' -v abs="$abs" -v want="$want" '
+    {
+      score = 0
+      if (abs != "" && $1 == abs) score = 3
+      else if ($2 == want || $2 == "refs/heads/" want) score = 2
+      else { n = split($1, parts, "/"); if (n > 0 && parts[n] == want) score = 1 }
+      s[NR] = score; line[NR] = $0
+      if (score > best) best = score
+    }
+    END {
+      if (best == 0) exit
+      for (i = 1; i <= NR; i++) if (s[i] == best) print line[i]
+    }
+  '
+}
+
+# ---- フェーズ 1: 全対象を解決してから削除する ----
+# 途中で cwd が消えても後続に影響しないよう、削除前に解決を済ませる。
+
+plan=()
+seen=""
+ok=0 ng=0 branch_ok=0 branch_ng=0
+cwd_doomed=0
+
+for t in "${targets[@]}"; do
+  matches=$(resolve "$t")
+
+  if [ -z "$matches" ]; then
+    printf 'NG   %s -- 対応する worktree が見つかりません\n' "$t" >&2
+    ng=$((ng + 1))
+    continue
+  fi
+
+  if [ "$(printf '%s\n' "$matches" | wc -l | tr -d ' ')" -gt 1 ]; then
+    printf 'NG   %s -- 複数の worktree に一致します。パスで指定してください:\n' "$t" >&2
+    printf '%s\n' "$matches" | cut -f1 | sed 's/^/       /' >&2
+    ng=$((ng + 1))
+    continue
+  fi
+
+  path=${matches%%$'\t'*}
+  branch=${matches#*$'\t'}
+  branch=${branch#refs/heads/}
+
+  if [ "$path" = "$main_wt" ]; then
+    printf 'SKIP %s -- メインの worktree なので削除しません\n' "$path" >&2
+    ng=$((ng + 1))
+    continue
+  fi
+
+  if printf '%s' "$seen" | grep -qxF "$path"; then
+    printf 'SKIP %s -- 既に指定済みです\n' "$path" >&2
+    continue
+  fi
+  seen="${seen}${path}"$'\n'
+
+  if [ "$orig_pwd" = "$path" ] || case "$orig_pwd" in "$path"/*) true ;; *) false ;; esac; then
+    cwd_doomed=1
+  fi
+
+  plan+=("$matches")
+done
+
+branch_opt=-d
+(( force_branch )) && branch_opt=-D
+
+remove_opts=()
+(( force >= 1 )) && remove_opts+=(--force)
+(( force >= 2 )) && remove_opts+=(--force)
+
+# ---- フェーズ 2: 削除 ----
+# cwd が削除対象の中にあると、削除後の git 呼び出しがすべて失敗する。
+# 先にメイン worktree へ移動しておく。
+if (( dry == 0 )) && [ -d "$main_wt" ]; then
+  cd "$main_wt" || { printf '%s: %s へ移動できません\n' "$progname" "$main_wt" >&2; exit 1; }
+fi
+
+for entry in ${plan[@]+"${plan[@]}"}; do
+  path=${entry%%$'\t'*}
+  branch=${entry#*$'\t'}
+  branch=${branch#refs/heads/}
+
+  if (( dry )); then
+    printf 'DRY  %s\n' "$path"
+    ok=$((ok + 1))
+    if (( keep_branch == 0 )) && [ -n "$branch" ]; then
+      printf '     -> branch %s を削除 (git branch %s)\n' "$branch" "$branch_opt"
+    fi
+    continue
+  fi
+
+  if ! err=$(git worktree remove ${remove_opts[@]+"${remove_opts[@]}"} "$path" 2>&1); then
+    printf 'NG   %s -- %s\n' "$path" "$err" >&2
+    ng=$((ng + 1))
+    continue
+  fi
+
+  printf 'OK   %s\n' "$path"
+  ok=$((ok + 1))
+
+  (( keep_branch )) && continue
+
+  if [ -z "$branch" ]; then
+    printf '     -- detached HEAD のためブランチ削除なし\n'
+    continue
+  fi
+
+  if err=$(git branch "$branch_opt" "$branch" 2>&1); then
+    printf '     OK branch %s\n' "$branch"
+    branch_ok=$((branch_ok + 1))
+  else
+    printf '     NG branch %s -- %s\n' "$branch" "$err" >&2
+    branch_ng=$((branch_ng + 1))
+  fi
+done
+
+if (( prune )) && (( dry == 0 )); then
+  git worktree prune
+fi
+
+printf -- '---- worktree 成功 %d 件 / 失敗 %d 件' "$ok" "$ng"
+if (( keep_branch == 0 )) && (( dry == 0 )); then
+  printf ', branch 成功 %d 件 / 失敗 %d 件' "$branch_ok" "$branch_ng"
+fi
+printf '\n'
+
+if (( cwd_doomed )) && (( dry == 0 )); then
+  printf '注意: 削除した worktree の中にいます。`cd %s` などで移動してください。\n' "$main_wt" >&2
+fi
+
+(( ng == 0 && branch_ng == 0 ))
