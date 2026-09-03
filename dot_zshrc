@@ -106,6 +106,7 @@ abbr -S val='vim ~/.config/alacritty/alacritty.toml'
 # herdr
 abbr -S hwcs='herdr workspace create --cwd ~/src --label "src"'
 abbr -S hwcd='herdr workspace create --cwd ~/.local/share/chezmoi --label "dotfiles"'
+abbr -S hr='herdr'
 # ============================== End aliases
 
 #	============================== repository manager

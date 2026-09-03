@@ -1,15 +1,38 @@
 # https://herdr.dev/docs/configuration/
 onboarding = false
 
-[ui.toast]
-delivery = "system"
-
 [keys]
 prefix = "ctrl+q"
-previous_workspace = "prefix+up"
-next_workspace     = "prefix+down"
+next_workspace     = ["ctrl+shift+command+down", "prefix+down"]
+previous_workspace = ["ctrl+shift+command+up", "prefix+up"]
 next_tab           = "ctrl+tab"
 previous_tab       = "ctrl+shift+tab"
 
+[[keys.command]]
+key = "prefix+m"
+type = "popup"
+command = "$HOME/.local/bin/herdr-note add"
+description = "選択箇所にコメントを追加"
+width = 120
+height = 12
+
+[[keys.command]]
+key = "prefix+shift+m"
+type = "popup"
+command = "$HOME/.local/bin/herdr-note send"
+description = "コメントをまとめて送信"
+width = 100
+height = 20
+
 [keys.indexed]
 workspaces = "ctrl+shift"
+
+[theme]
+name = "vesper"
+auto_switch = false
+
+[ui]
+show_agent_labels_on_pane_borders = true
+agent_panel_sort = "spaces"
+[ui.toast]
+delivery = "system"
