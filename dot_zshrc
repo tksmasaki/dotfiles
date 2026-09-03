@@ -3,9 +3,10 @@ setopt auto_cd
 setopt auto_pushd
 setopt hist_ignore_dups
 setopt ignoreeof
-setopt noclobber
 setopt pushd_ignore_dups
 setopt share_history
+[[ -n $CLAUDECODE ]] || setopt noclobber
+
 HISTFILE=~/.zsh_history
 HISTORY_IGNORE="(l[sla]|lla|pwd|history|ps)"
 HISTSIZE=10000
