@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# toggle-remote-confirm - リモート影響コマンドの事前確認フックを切り替える
+#
+# ~/.claude/hooks/confirm-remote-commands.sh は、リモートに影響するコマンド
+# （git push / gh pr / npm publish / terraform apply など）を検知して
+# 実行前に確認を求める PreToolUse フック。
+#
+# スキップフラグ CLAUDE_SKIP_REMOTE_CONFIRM に "1" が設定されていると、この検知が
+# スキップされ、通常のパーミッション判定に委ねられる（スキップ時はフックが
+# systemMessage でアラートを出す）。
+#
+# 引数の on/off は「確認フックの状態」を表す。フラグはスキップ側なので、
+# 確認を有効化する = フラグを無効にする、という反転関係になる。
+#
+# 状態は worktree ごとに分ける。書き込み先は git ディレクトリ直下の claude-env.json
+# （メイン作業ツリーは <repo>/.git、worktree は <repo>/.git/worktrees/<名前>）。
+# .claude/settings.local.json には書かない。worktree の
+# .claude/settings.local.json がメイン作業ツリーへの symlink になっている場合、そこに
+# 書くと全 worktree で確認がスキップされてしまう。symlink 自体は permission を共有
+# するために残す。状態ファイルは git worktree remove で worktree ごと消える。
+#
+# 現在値の解決順は ~/.claude/hooks/lib/claude-env.sh と揃える。共有側（settings）に
+# 値が残っていても worktree 側で打ち消せるよう、確認の有効化ではキーを消さず "0" を書く。
+#
+# 既存の設定を壊さないよう jq でキー単位の書き換えのみを行い、書き込みは一時ファイル
+# 経由にして失敗時に元ファイルを残す。
+
+set -euo pipefail
+
+KEY=CLAUDE_SKIP_REMOTE_CONFIRM
+STATE_BASENAME=claude-env.json
+
+usage() {
+  cat <<'EOF'
+toggle-remote-confirm - リモート影響コマンドの事前確認フックを切り替える
+
+Usage:
+  toggle-remote-confirm           # 現在の状態を見てトグル
+  toggle-remote-confirm on        # 確認を有効化（= スキップフラグを "0"。enable / 1 も可）
+  toggle-remote-confirm off       # 確認を無効化（= スキップフラグを "1"。disable / 0 も可）
+  toggle-remote-confirm status    # 現在の状態を表示するだけ（ファイルは作らない）
+  toggle-remote-confirm -h        # このヘルプ
+
+引数は「確認フックの状態」を表す（スキップフラグ CLAUDE_SKIP_REMOTE_CONFIRM の
+状態ではない）。確認を有効化するとフラグは無効になる。
+
+対象ファイル:
+  git ディレクトリ直下の claude-env.json
+  （メイン作業ツリーは <repo>/.git、worktree は <repo>/.git/worktrees/<名前>）
+  worktree ごとに別ファイルになるため、切り替えは他の worktree に波及しない
+  git リポジトリ外ではカレントディレクトリ直下の .claude/settings.local.json
+  settings.json やグローバル設定 (~/.claude) は触らない
+
+現在値の解決順:
+  claude-env.json -> リポジトリの .claude/settings.local.json -> 同 settings.json
+  -> ~/.claude/settings.local.json -> ~/.claude/settings.json
+  worktree で未指定なら共有側の値が既定として効く。on は "0" を書いて打ち消す。
+
+反映タイミング:
+  実行中の Claude Code セッションにも即座に反映される。確認フック本体
+  (~/.claude/hooks/confirm-remote-commands.sh) がコマンドごとにこのファイルの
+  現在値を読み直すため、再起動は不要。
+EOF
+}
+
+[ "$#" -le 1 ] || {
+  echo "引数が多すぎます: $*" >&2
+  echo >&2
+  usage >&2
+  exit 2
+}
+
+case "${1-}" in
+  '')            action=toggle ;;
+  on|enable|1)   action=remove ;;  # 確認を有効化 = スキップフラグを無効にする
+  off|disable|0) action=add ;;     # 確認を無効化 = スキップフラグを立てる
+  status)        action=status ;;
+  -h|--help)     usage; exit 0 ;;
+  *)             echo "不明な引数: $1" >&2; echo >&2; usage >&2; exit 2 ;;
+esac
+
+command -v jq >/dev/null 2>&1 || {
+  echo "jq が必要です（未インストール）。中止します。" >&2
+  exit 1
+}
+
+git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null || true)"
+root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[ -n "$root" ] || root="$PWD"
+
+if [ -n "$git_dir" ]; then
+  target="$git_dir/$STATE_BASENAME"
+else
+  target="$root/.claude/settings.local.json"
+fi
+
+read_key() {
+  local file="$1"
+  [ -f "$file" ] || return 0
+  jq -r --arg k "$KEY" '.env[$k] // empty' "$file" 2>/dev/null || {
+    echo "$file を読めません（JSON が不正、または env がオブジェクトでない）。中止します。" >&2
+    return 1
+  }
+}
+
+sources=()
+if [ -n "$git_dir" ]; then
+  sources+=("$git_dir/$STATE_BASENAME")
+fi
+sources+=(
+  "$root/.claude/settings.local.json"
+  "$root/.claude/settings.json"
+  "$HOME/.claude/settings.local.json"
+  "$HOME/.claude/settings.json"
+)
+
+current=""
+source_file=""
+for file in "${sources[@]}"; do
+  val="$(read_key "$file")"
+  if [ -n "$val" ]; then
+    current="$val"
+    source_file="$file"
+    break
+  fi
+done
+
+# 状態を「確認フックの有効/無効」として表示する（スキップフラグの値ではなく意味で見せる）
+state_label() {
+  case "$1" in
+    1)  echo '無効 (スキップ中)' ;;
+    '') echo '有効 (既定)' ;;
+    *)  echo "有効 (\"$1\")" ;;
+  esac
+}
+
+echo "$target"
+if [ -n "$source_file" ] && [ "$source_file" != "$target" ]; then
+  echo "  現在値の採用元: $source_file"
+fi
+
+if [ "$action" = status ]; then
+  echo "リモートコマンドの事前確認: $(state_label "$current")"
+  exit 0
+fi
+
+if [ "$action" = toggle ]; then
+  if [ "$current" = "1" ]; then action=remove; else action=add; fi
+fi
+
+if [ "$action" = add ]; then new=1; else new=0; fi
+
+mkdir -p "$(dirname "$target")"
+[ -f "$target" ] || echo '{}' > "$target"
+
+# 既存のパーミッションを引き継ぐ（mktemp は 0600 で作るため、mv でモードが変わってしまう）
+mode="$(stat -f %Lp "$target" 2>/dev/null || stat -c %a "$target" 2>/dev/null || true)"
+
+tmp="$(mktemp "$target.XXXXXX")"
+trap 'rm -f "$tmp"' EXIT
+
+jq --arg k "$KEY" --arg v "$new" '.env[$k] = $v' "$target" > "$tmp"
+
+[ -s "$tmp" ] || {
+  echo "jq の出力が空でした。ファイルは変更していません。" >&2
+  exit 1
+}
+
+if [ -n "$mode" ]; then
+  chmod "$mode" "$tmp"
+fi
+
+mv "$tmp" "$target"
+trap - EXIT
+
+echo "リモートコマンドの事前確認: $(state_label "$current") -> $(state_label "$new")"
+if [ "$new" = "1" ]; then
+  echo "注意: git push やデプロイ系のコマンドも事前確認なしで通るようになる。検証が終わったら on に戻すこと" >&2
+fi
+echo "（この worktree のみ。実行中の Claude Code セッションにも即座に反映される）"

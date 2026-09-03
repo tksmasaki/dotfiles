@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# toggle-auto-commit - Claude Code の自動コミット（CLAUDE_AUTO_COMMIT）を切り替える
+#
+# "1" が設定されていると、Claude Code が git commit を作業の一環として自発的に
+# 実行してよくなる（提案・確認を省略）。
+#
+# 状態は worktree ごとに分ける。書き込み先は git ディレクトリ直下の claude-env.json
+# （メイン作業ツリーは <repo>/.git、worktree は <repo>/.git/worktrees/<名前>）。
+# .claude/settings.local.json には書かない。worktree の
+# .claude/settings.local.json がメイン作業ツリーへの symlink になっている場合、そこに
+# 書くと全 worktree で同じ値になってしまう。symlink 自体は permission を共有する
+# ために残す。状態ファイルは git worktree remove で worktree ごと消える。
+#
+# 現在値の解決順は ~/.claude/hooks/lib/claude-env.sh と揃える。共有側（settings）に
+# 値が残っていても worktree 側で打ち消せるよう、無効化ではキーを消さず "0" を書く。
+#
+# 既存の設定を壊さないよう jq でキー単位の書き換えのみを行い、書き込みは一時ファイル
+# 経由にして失敗時に元ファイルを残す。
+
+set -euo pipefail
+
+KEY=CLAUDE_AUTO_COMMIT
+STATE_BASENAME=claude-env.json
+
+usage() {
+  cat <<'EOF'
+toggle-auto-commit - Claude Code の自動コミット（CLAUDE_AUTO_COMMIT）を切り替える
+
+Usage:
+  toggle-auto-commit           # 現在の状態を見てトグル
+  toggle-auto-commit on        # 有効化（enable / 1 も可）
+  toggle-auto-commit off       # 無効化（disable / 0 も可）
+  toggle-auto-commit status    # 現在の状態を表示するだけ（ファイルは作らない）
+  toggle-auto-commit -h        # このヘルプ
+
+対象ファイル:
+  git ディレクトリ直下の claude-env.json
+  （メイン作業ツリーは <repo>/.git、worktree は <repo>/.git/worktrees/<名前>）
+  worktree ごとに別ファイルになるため、切り替えは他の worktree に波及しない
+  git リポジトリ外ではカレントディレクトリ直下の .claude/settings.local.json
+  settings.json やグローバル設定 (~/.claude) は触らない
+
+現在値の解決順:
+  claude-env.json -> リポジトリの .claude/settings.local.json -> 同 settings.json
+  -> ~/.claude/settings.local.json -> ~/.claude/settings.json
+  worktree で未指定なら共有側の値が既定として効く。off は "0" を書いて打ち消す。
+
+反映タイミング:
+  実行中の Claude Code セッションにも、次のプロンプト送信時から反映される。
+  claude-env.json は Claude Code の settings ではないので環境変数には載らないが、
+  UserPromptSubmit フック (~/.claude/hooks/auto-commit-state.sh) が毎回読み直して
+  現在値を伝えるため、再起動は不要。このフックを外すと Claude 側に伝わらない。
+EOF
+}
+
+[ "$#" -le 1 ] || {
+  echo "引数が多すぎます: $*" >&2
+  echo >&2
+  usage >&2
+  exit 2
+}
+
+case "${1-}" in
+  '')            action=toggle ;;
+  on|enable|1)   action=add ;;
+  off|disable|0) action=remove ;;
+  status)        action=status ;;
+  -h|--help)     usage; exit 0 ;;
+  *)             echo "不明な引数: $1" >&2; echo >&2; usage >&2; exit 2 ;;
+esac
+
+command -v jq >/dev/null 2>&1 || {
+  echo "jq が必要です（未インストール）。中止します。" >&2
+  exit 1
+}
+
+git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null || true)"
+root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[ -n "$root" ] || root="$PWD"
+
+if [ -n "$git_dir" ]; then
+  target="$git_dir/$STATE_BASENAME"
+else
+  target="$root/.claude/settings.local.json"
+fi
+
+read_key() {
+  local file="$1"
+  [ -f "$file" ] || return 0
+  jq -r --arg k "$KEY" '.env[$k] // empty' "$file" 2>/dev/null || {
+    echo "$file を読めません（JSON が不正、または env がオブジェクトでない）。中止します。" >&2
+    return 1
+  }
+}
+
+sources=()
+if [ -n "$git_dir" ]; then
+  sources+=("$git_dir/$STATE_BASENAME")
+fi
+sources+=(
+  "$root/.claude/settings.local.json"
+  "$root/.claude/settings.json"
+  "$HOME/.claude/settings.local.json"
+  "$HOME/.claude/settings.json"
+)
+
+current=""
+source_file=""
+for file in "${sources[@]}"; do
+  val="$(read_key "$file")"
+  if [ -n "$val" ]; then
+    current="$val"
+    source_file="$file"
+    break
+  fi
+done
+
+# 状態を「自動コミットの有効/無効」として表示する（フラグの値そのものではなく意味で見せる）
+state_label() {
+  case "$1" in
+    1)  echo '有効 ("1")' ;;
+    '') echo '無効 (未設定)' ;;
+    *)  echo "無効 (\"$1\")" ;;
+  esac
+}
+
+echo "$target"
+if [ -n "$source_file" ] && [ "$source_file" != "$target" ]; then
+  echo "  現在値の採用元: $source_file"
+fi
+
+if [ "$action" = status ]; then
+  echo "自動コミット: $(state_label "$current")"
+  exit 0
+fi
+
+if [ "$action" = toggle ]; then
+  if [ "$current" = "1" ]; then action=remove; else action=add; fi
+fi
+
+if [ "$action" = add ]; then new=1; else new=0; fi
+
+mkdir -p "$(dirname "$target")"
+[ -f "$target" ] || echo '{}' > "$target"
+
+# 既存のパーミッションを引き継ぐ（mktemp は 0600 で作るため、mv でモードが変わってしまう）
+mode="$(stat -f %Lp "$target" 2>/dev/null || stat -c %a "$target" 2>/dev/null || true)"
+
+tmp="$(mktemp "$target.XXXXXX")"
+trap 'rm -f "$tmp"' EXIT
+
+jq --arg k "$KEY" --arg v "$new" '.env[$k] = $v' "$target" > "$tmp"
+
+[ -s "$tmp" ] || {
+  echo "jq の出力が空でした。ファイルは変更していません。" >&2
+  exit 1
+}
+
+if [ -n "$mode" ]; then
+  chmod "$mode" "$tmp"
+fi
+
+mv "$tmp" "$target"
+trap - EXIT
+
+echo "自動コミット: $(state_label "$current") -> $(state_label "$new")"
+echo "（この worktree のみ。実行中の Claude Code セッションにも次のプロンプトから反映される）"
