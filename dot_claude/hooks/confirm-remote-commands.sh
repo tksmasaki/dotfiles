@@ -5,9 +5,12 @@
 #
 # 検知対象:
 #   Git/GitHub:
-#     - git push / git commit
-#     - gh pr ... / gh release ...
+#     - git push / git commit（-C / -c / --no-pager 等のグローバルオプション挟みも含む）
+#     - git の任意ファイル書き出し・任意コマンド起動オプション
+#       (--output / --upload-pack / --receive-pack / --exec)
+#     - gh pr ... / gh release ...（--repo 等のフラグ挟みも含む）
 #     - gh repo create|delete / gh secret|variable set / gh workflow run
+#     - gh api で書き込みを伴うもの（-X/--method, -f/-F/--field/--raw-field, --input）
 #   パッケージ公開:
 #     - npm|yarn|pnpm publish / gem push / docker push
 #   デプロイ・インフラ:
@@ -47,20 +50,31 @@ skip_remote_confirm="$(claude_env_current CLAUDE_SKIP_REMOTE_CONFIRM "$cwd")" \
 auto_commit="$(claude_env_current CLAUDE_AUTO_COMMIT "$cwd")" \
   || auto_commit="${CLAUDE_AUTO_COMMIT:-}"
 
-# 行頭またはコマンド区切り(; & | && ||)の直後。
-# ラッパー(sudo / time / bundle exec / npx / env VAR=...)の前置きも許容する。
-lead='(^|[;&|]|&&|\|\|)[[:space:]]*((sudo|time|bundle[[:space:]]+exec|npx|env[[:space:]]+[^[:space:]]+=[^[:space:]]*)[[:space:]]+)*'
+# コマンド名の直前が行頭か、識別子・パスの一部にならない 1 文字であればよい。
+# 区切り(; & |)だけでなく、$( ( { 引用符 バックスラッシュ や、
+# sudo / xargs / eval / command / then / do などの前置きの後ろも対象になる。
+lead='(^|[^[:alnum:]_.-])'
+
+# git のサブコマンドの前に置けるグローバルオプション（-C <dir> / -c k=v / --no-pager 等）
+git_gopt='((-[cC]|--git-dir|--work-tree|--namespace|--exec-path|--config-env)[[:space:]]+[^[:space:]]+|--?[[:alnum:]][^[:space:]]*)[[:space:]]+'
+git_cmd="git[[:space:]]+(${git_gopt})*"
+
+# gh のサブコマンドの前後に置けるフラグ（--repo o/r / -R o/r / --repo=o/r 等）
+gh_flag='(-[[:alnum:]]|--[[:alnum:]-]+)(=[^[:space:]]*|[[:space:]]+[^-[:space:]][^[:space:]]*)?[[:space:]]+'
+gh_cmd="gh[[:space:]]+(${gh_flag})*"
 
 # git commit（エスケープハッチで個別に扱うため分離）
-commit_kw='git[[:space:]]+commit'
+commit_kw="${git_cmd}commit([^[:alnum:]_-]|$)"
 
 # commit 以外の検知対象（リモート影響 / 取り消し困難）
-other_kw='git[[:space:]]+push'
-other_kw+='|gh[[:space:]]+pr[[:space:]]+(create|merge|close|edit|review|comment|reopen)([[:space:]]|$)'
-other_kw+='|gh[[:space:]]+release[[:space:]]+(create|delete|upload|edit)([[:space:]]|$)'
-other_kw+='|gh[[:space:]]+repo[[:space:]]+(create|delete)'
-other_kw+='|gh[[:space:]]+(secret|variable)[[:space:]]+set'
-other_kw+='|gh[[:space:]]+workflow[[:space:]]+run'
+other_kw="${git_cmd}push([^[:alnum:]_-]|$)"
+other_kw+='|git[[:space:]]+([^;&|]*[[:space:]])?--(output|upload-pack|receive-pack|exec)([[:space:]=]|$)'
+other_kw+="|${gh_cmd}pr[[:space:]]+(${gh_flag})*(create|merge|close|edit|review|comment|reopen)([[:space:]]|$)"
+other_kw+="|${gh_cmd}release[[:space:]]+(${gh_flag})*(create|delete|upload|edit)([[:space:]]|$)"
+other_kw+="|${gh_cmd}repo[[:space:]]+(${gh_flag})*(create|delete)"
+other_kw+="|${gh_cmd}(secret|variable)[[:space:]]+(${gh_flag})*set"
+other_kw+="|${gh_cmd}workflow[[:space:]]+(${gh_flag})*run"
+other_kw+="|${gh_cmd}api([[:space:]]+[^;&|[:space:]]+)*[[:space:]]+(-X|-f|-F|--method|--field|--raw-field|--input)[^[:space:]]*"
 other_kw+='|(npm|yarn|pnpm)[[:space:]]+publish'
 other_kw+='|gem[[:space:]]+push'
 other_kw+='|docker[[:space:]]+push'
@@ -105,8 +119,7 @@ fi
 # 抽出に失敗しても確認自体は行うため、失敗時は空にして総称の文言にフォールバックする。
 matched="$(
   printf '%s' "$cmd" | grep -oE "$pattern_full" \
-    | sed -E 's/^[;&|[:space:]]+//' \
-    | sed -E 's/^((sudo|time|bundle[[:space:]]+exec|npx|env[[:space:]]+[^[:space:]]+=[^[:space:]]*)[[:space:]]+)*//' \
+    | sed -E 's/^[^[:alnum:]_.-]//' \
     | sed -E 's/[[:space:]]+/ /g' \
     | sed -E 's/[[:space:]]+$//' \
     | awk 'NF && !seen[$0]++ {printf "%s%s", sep, $0; sep=", "}' \
@@ -116,7 +129,7 @@ matched="$(
 if [ -n "$matched" ]; then
   reason="リモートに影響するコマンドを検知しました: ${matched}。実行前に内容を確認してください。"
 else
-  reason="リモートに影響するコマンド（git push/commit, gh pr/release/repo/secret/workflow, npm/yarn/pnpm publish, gem/docker push, kubectl apply/delete, terraform apply/destroy, gcloud/cap deploy 等）です。実行前に内容を確認してください。"
+  reason="リモートに影響するコマンド（git push/commit, git --output/--upload-pack/--receive-pack/--exec, gh pr/release/repo/secret/workflow, gh api の書き込み, npm/yarn/pnpm publish, gem/docker push, kubectl apply/delete, terraform apply/destroy, gcloud/cap deploy 等）です。実行前に内容を確認してください。"
 fi
 
 jq -n --arg r "$reason" '
