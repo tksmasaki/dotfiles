@@ -1,5 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "MAX_MCP_OUTPUT_TOKENS": "100000"
+{{- $envPath := joinPath .chezmoi.homeDir ".config/claude/env.json" }}
+{{- if stat $envPath }}
+{{- range $k, $v := include $envPath | fromJson }},
+    {{ $k | toJson }}: {{ $v | toJson }}
+{{- end }}
+{{- end }}
+  },
   "permissions": {
     "allow": [
       "Bash(gh pr view *)",
@@ -32,7 +41,6 @@
       "Bash(git branch --sort*)",
       "Bash(git branch --format*)",
       "Bash(git stash list *)",
-      "Bash(git fetch *)",
       "Bash(git blame *)",
       "Bash(docker ps *)",
       "Bash(docker images *)",
@@ -41,7 +49,8 @@
       "Bash(terraform plan *)",
       "Bash(terraform show *)",
       "Bash(terraform validate *)"
-    ]
+    ],
+    "defaultMode": "auto"
   },
   "model": "opus[1m]",
   "hooks": {
@@ -51,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh blocked",
+            "command": "~/.claude/hooks/herdr-agent-state.sh blocked",
             "timeout": 10
           }
         ]
@@ -63,7 +72,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh working",
+            "command": "~/.claude/hooks/herdr-agent-state.sh working",
             "timeout": 10
           }
         ]
@@ -86,7 +95,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh release",
+            "command": "~/.claude/hooks/herdr-agent-state.sh release",
             "timeout": 10
           }
         ]
@@ -98,7 +107,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh idle",
+            "command": "~/.claude/hooks/herdr-agent-state.sh idle",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/herdr-agent-state.sh session",
             "timeout": 10
           }
         ]
@@ -110,7 +124,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh idle",
+            "command": "~/.claude/hooks/herdr-agent-state.sh idle",
             "timeout": 10
           }
         ]
@@ -122,7 +136,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/herdr-agent-state.sh working",
+            "command": "~/.claude/hooks/herdr-agent-state.sh working",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/prompt-mode-context.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/auto-commit-state.sh",
             "timeout": 10
           }
         ]
@@ -134,7 +158,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); f=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"'); [[ \"$f\" == *.md ]] || exit 0; npx --yes markdownlint-cli2 --fix \"$f\" >/dev/null 2>&1; result=$(npx --yes markdownlint-cli2 \"$f\" 2>&1); code=$?; [ $code -eq 0 ] && exit 0; jq -n --arg ctx \"markdownlint-cli2 (auto-fix 適用後の残エラー):\\n$result\" '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":$ctx}}'",
+            "command": "~/.claude/hooks/markdownlint-fix.sh",
             "timeout": 30,
             "statusMessage": "Running markdownlint..."
           }
@@ -146,6 +170,47 @@
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
+  "enabledPlugins": {
+    "ruby-lsp@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "playground@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "figma@claude-plugins-official": true,
+    "plannotator@plannotator": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "claude-community": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-community"
+      }
+    },
+    "plannotator": {
+      "source": {
+        "source": "github",
+        "repo": "backnotprop/plannotator"
+      }
+    }
+  },
   "language": "japanese",
-  "theme": "dark"
+  "autoMemoryEnabled": false,
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark-daltonized",
+  "switchModelsOnFlag": false
+{{- $p := joinPath .chezmoi.homeDir ".config/claude/automode.json" }}
+{{- if stat $p }},
+  "autoMode": {{ include $p | trim | indent 2 | trim }}
+{{- end }}
 }
