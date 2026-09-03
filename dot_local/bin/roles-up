@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+prog="${0##*/}"
+
+cwd="${1:-$PWD}"
+if [ ! -d "$cwd" ]; then
+  echo "$prog: no such directory: $cwd" >&2
+  exit 1
+fi
+cwd="$(cd "$cwd" && pwd)"
+
+if ! herdr status server >/dev/null 2>&1; then
+  echo "$prog: herdr server is not running" >&2
+  exit 1
+fi
+
+project_dir="$HOME/.claude/projects/$(printf '%s' "$cwd" | tr '/.' '--')"
+live_sessions="$(herdr agent list | jq -r '.result.agents[].agent_session.value // empty')"
+
+session_for_role() {
+  local role="$1" file id name
+  [ -d "$project_dir" ] || return 0
+
+  while IFS= read -r file; do
+    id="$(basename "$file" .jsonl)"
+    case $'\n'"$live_sessions"$'\n' in
+      *$'\n'"$id"$'\n'*) continue ;;
+    esac
+    name="$(grep '"type":"agent-name"' "$file" | tail -1 | jq -r '.agentName // empty')"
+    if [ "$name" = "$role" ]; then
+      printf '%s\n' "$id"
+      return 0
+    fi
+  done < <(ls -t -- "$project_dir"/*.jsonl 2>/dev/null)
+}
+
+pane_id() { jq -r "$1"; }
+
+target_workspace=()
+if [ -n "${HERDR_WORKSPACE_ID:-}" ]; then
+  target_workspace=(--workspace "$HERDR_WORKSPACE_ID")
+fi
+
+impl="$(herdr tab create "${target_workspace[@]}" --cwd "$cwd" --focus | pane_id '.result.root_pane.pane_id')"
+review="$(herdr pane split "$impl"   --direction right --cwd "$cwd" --no-focus | pane_id '.result.pane.pane_id')"
+verify="$(herdr pane split "$review" --direction down  --cwd "$cwd" --no-focus | pane_id '.result.pane.pane_id')"
+
+start() {
+  local role="$1" pane="$2" color="$3"
+  local name="$role" out resume deadline=$((SECONDS + 60))
+  local claude_args=(--name "$role")
+
+  resume="$(session_for_role "$role")"
+  if [ -n "$resume" ]; then
+    claude_args=(--resume "$resume" "${claude_args[@]}")
+    echo "$prog: $role resumes claude session $resume"
+  fi
+
+  while ! out="$(herdr agent start "$name" --kind claude --pane "$pane" --timeout 120000 -- "${claude_args[@]}" 2>&1)"; do
+    case "$out" in
+      *agent_pane_busy*)
+        if [ "$SECONDS" -ge "$deadline" ]; then
+          echo "$prog: pane $pane never reached an available shell prompt" >&2
+          return 1
+        fi
+        sleep 0.3
+        ;;
+      *agent_name_taken*)
+        if [ "$name" != "$role" ]; then
+          printf '%s\n' "$out" >&2
+          return 1
+        fi
+        name="$role-$(printf '%s' "$pane" | tr 'A-Z:' 'a-z-')"
+        ;;
+      *)
+        printf '%s\n' "$out" >&2
+        return 1
+        ;;
+    esac
+  done
+
+  herdr agent wait "$pane" --until idle --timeout 60000 >/dev/null
+  herdr agent prompt "$pane" "/color $color" >/dev/null
+}
+
+failed=0
+start impl   "$impl"   purple || failed=1
+start review "$review" blue   || failed=1
+start verify "$verify" cyan   || failed=1
+
+herdr agent focus "$impl" >/dev/null
+
+exit "$failed"
