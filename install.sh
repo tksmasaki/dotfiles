@@ -54,6 +54,14 @@ else
 	echo "Alacritty is already installed"
 fi
 
+# https://github.com/yuru7/HackGen
+if [[ ! -f "$HOME/Library/Fonts/HackGenConsoleNF-Regular.ttf" ]]; then
+	echo "Install HackGen Console NF"
+	brew install --cask font-hackgen-nerd
+else
+	echo "HackGen Console NF is already installed"
+fi
+
 if ! command -v herdr > /dev/null 2>&1; then
 	echo "Install herdr"
   brew install herdr
