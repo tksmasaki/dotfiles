@@ -64,6 +64,12 @@ fi
 echo "Apply dotfiles with chezmoi"
 chezmoi init --apply tksmasaki
 
+unsynced="$(chezmoi managed --include=files --path-style=absolute)"
+if [[ -n "$unsynced" ]]; then
+	echo "Warning: not symlinked, so edits in $HOME will not sync back:"
+	echo "$unsynced" | sed 's/^/  /'
+fi
+
 eval "$(mise activate zsh)"
 echo "Trust mise configuration"
 mise trust ~/.config/mise/config.toml
