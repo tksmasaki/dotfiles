@@ -85,10 +85,19 @@ main_wt=$(printf '%s\n' "$wt_list" | head -n1 | cut -f1)
 
 # 引数 1 つに一致する "パス<TAB>ブランチ" を、最高スコアのものすべて出力する。
 # 2 行以上返ったら指定が曖昧ということ。
+# ディレクトリが先に消えた worktree も登録は git に残るため、実在を条件にすると
+# パス指定で照合できなくなる。存在しないパスは親ディレクトリ経由で絶対パスにする。
 resolve() {
-  local want=$1 abs=""
+  local want=$1 abs="" parent base
   if [ -d "$want" ]; then
     abs=$(cd "$want" 2>/dev/null && pwd -P) || abs=""
+  else
+    parent=$(dirname -- "$want")
+    base=$(basename -- "$want")
+    if [ -d "$parent" ] && [ "$base" != "." ] && [ "$base" != ".." ]; then
+      parent=$(cd "$parent" 2>/dev/null && pwd -P) || parent=""
+      [ -n "$parent" ] && abs="${parent%/}/$base"
+    fi
   fi
   printf '%s\n' "$wt_list" | awk -F'\t' -v abs="$abs" -v want="$want" '
     {
