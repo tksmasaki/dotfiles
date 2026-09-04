@@ -206,11 +206,11 @@ for entry in ${plan[@]+"${plan[@]}"}; do
     continue
   fi
 
-  if err=$(git branch "$branch_opt" "$branch" 2>&1); then
+  if err=$(git -c advice.forceDeleteBranch=false branch "$branch_opt" "$branch" 2>&1); then
     printf '     OK branch %s\n' "$branch"
     branch_ok=$((branch_ok + 1))
   else
-    printf '     NG branch %s -- %s\n' "$branch" "$err" >&2
+    printf '     NG branch %s -- %s\n' "$branch" "${err%%$'\n'*}" >&2
     branch_ng=$((branch_ng + 1))
   fi
 done
