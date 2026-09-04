@@ -28,6 +28,7 @@ notes:
     squash merge したブランチもここでは未マージ扱いになるため -D が要る。
   - detached HEAD の worktree にはブランチ削除は行わない。
   - ディレクトリ名での指定が複数の worktree に一致する場合はエラーにする。
+  - 既に削除済みの対象は SKIP として扱い、終了ステータスには数えない。
   - 自分がいる worktree も削除できるが、削除後はシェルの cwd が存在しなくなる。
 
 examples:
@@ -127,8 +128,7 @@ for t in "${targets[@]}"; do
   matches=$(resolve "$t")
 
   if [ -z "$matches" ]; then
-    printf 'NG   %s -- 対応する worktree が見つかりません\n' "$t" >&2
-    ng=$((ng + 1))
+    printf 'SKIP %s -- 対応する worktree がありません (削除済み)\n' "$t" >&2
     continue
   fi
 
