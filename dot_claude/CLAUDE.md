@@ -41,6 +41,10 @@ commit・push される成果物（PR / issue 本文、コミットメッセー�
 
 推論・内部思考は英語で行う。
 
+## skill が理由で止まるとき
+
+skill の指示が原因で確認を求めたり作業を止めたりするときは、どの SKILL.md のどの記述が根拠かを引用して示す。
+
 ## PR / issue 本文の更新
 
 既存 PR の body を更新する前に pr-description skill を、既存 issue の body を更新する前に issue-description skill を読む。`gh pr edit --body` / `gh issue edit --body` でも MCP の `update_pull_request` / `issue_write` でも同じ。
