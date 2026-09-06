@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "ask": [
+      "Bash(git push*)",
+      "Bash(git remote*)",
+      "Bash(gh pr *)",
+      "Bash(gh release *)",
+      "Bash(gh repo *)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)",
+      "Bash(gh workflow *)",
+      "Bash(gh api *)",
+      "mcp__github__push_files",
+      "mcp__github__create_or_update_file",
+      "mcp__github__delete_file",
+      "mcp__github__create_branch",
+      "mcp__github__create_repository",
+      "mcp__github__delete_repository",
+      "mcp__github__fork_repository",
+      "mcp__github__create_pull_request",
+      "mcp__github__update_pull_request",
+      "mcp__github__update_pull_request_branch",
+      "mcp__github__merge_pull_request",
+      "mcp__github__pull_request_review_write",
+      "mcp__github__add_comment_to_pending_review",
+      "mcp__github__add_reply_to_pull_request_comment",
+      "mcp__github__request_copilot_review",
+      "mcp__github__issue_write",
+      "mcp__github__sub_issue_write",
+      "mcp__github__add_issue_comment",
+      "mcp__github__run_secret_scanning"
+    ]
+  },
+  "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Anything that publishes to the remote of tksmasaki/dotfiles — git push, git remote changes, gh pr/release/repo/secret/variable/workflow, gh api writes, and the mcp__github__* write tools. This repository is PUBLIC and the user requires an explicit approval prompt every time; never auto-approve these, even when the user's intent to publish seems clear."
+    ]
+  }
+}
