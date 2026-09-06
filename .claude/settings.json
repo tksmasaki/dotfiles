@@ -31,11 +31,5 @@
       "mcp__github__add_issue_comment",
       "mcp__github__run_secret_scanning"
     ]
-  },
-  "autoMode": {
-    "soft_deny": [
-      "$defaults",
-      "Anything that publishes to the remote of tksmasaki/dotfiles — git push, git remote changes, gh pr/release/repo/secret/variable/workflow, gh api writes, and the mcp__github__* write tools. This repository is PUBLIC and the user requires an explicit approval prompt every time; never auto-approve these, even when the user's intent to publish seems clear."
-    ]
   }
 }
