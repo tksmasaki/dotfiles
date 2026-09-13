@@ -154,8 +154,4 @@
   "skipWorkflowUsageWarning": true,
   "theme": "dark-daltonized",
   "switchModelsOnFlag": false
-{{- $p := joinPath .chezmoi.homeDir ".config/claude/automode.json" }}
-{{- if stat $p }},
-  "autoMode": {{ include $p | trim | indent 2 | trim }}
-{{- end }}
 }
