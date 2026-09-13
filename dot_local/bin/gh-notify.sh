@@ -5,26 +5,29 @@
 # GitHub の未読通知を gh CLI でポーリングし、前回チェックから新しくなった
 # スレッドだけを macOS のデスクトップ通知で知らせる
 #
-# - 状態: 通知 ID -> updated_at の対応表を STATE_FILE に保存し、ID の新規出現と
-#          updated_at の更新の両方を新着とみなす
+# - 状態: 通知 ID -> reason の対応表を STATE_FILE に保存し、ID の新規出現と
+#          reason の変化だけを新着とみなす。レビュー依頼の後にコミットが積まれても
+#          reason は変わらないので、同じスレッドを繰り返し通知しない
 # - 認証: gh CLI の既存ログインセッション(keyring)をそのまま利用する
 #          (トークン等はこのスクリプトに一切ハードコードしない)
 # - ログ: 正常・エラーいずれも LOG_FILE に追記する(エラーは握り潰さない)
 # - 失敗: 連続失敗が続いたらデスクトップ通知を出し、沈黙したまま止まらないようにする
-# - 除外: CI(CheckSuite / ci_activity)は PR 側の通知と重複するので取り込まない
+# - 絞り込み: メンションとレビュー依頼だけを通知する。アサインや購読による更新は
+#            コミットや CI の度に届いて求められている通知を埋もれさせる
 # - 冪等: 何度呼ばれても状態ファイルとの差分だけを通知するので副作用が重複しない
 
 set -u
 
 # ---- 設定 ---------------------------------------------------------------
 CACHE_DIR="${GH_NOTIFY_CACHE_DIR:-${HOME}/.cache/gh-notify}"
-STATE_FILE="${CACHE_DIR}/last_seen.json"    # 通知 ID -> updated_at
+STATE_FILE="${CACHE_DIR}/notified_reasons.json"  # 通知 ID -> reason
 FAIL_FILE="${CACHE_DIR}/fail_count"         # 連続失敗回数
 LOG_FILE="${CACHE_DIR}/gh-notify.log"
 MAX_LOG_BYTES=1048576                       # 1MB を超えたらローテート
 FAIL_NOTIFY_AT=2                            # この回数の連続失敗で通知
 FAIL_NOTIFY_EVERY=8                         # 以降はこの回数ごとに再通知
 NOTIFICATIONS_URL="https://github.com/notifications"
+NOTIFY_REASONS='["mention","team_mention","review_requested"]'
 
 # launchd から起動されると PATH が最小限(/usr/bin:/bin 等)になるため、
 # gh(mise 管理)と osascript を確実に解決できるよう PATH を補う
@@ -215,7 +218,7 @@ main() {
   local raw stderr_file
   stderr_file=$(mktemp "${TMPDIR:-/tmp}/gh-notify.err.XXXXXX")
   if ! raw=$("${GH}" api notifications \
-        --jq '[.[] | select(.subject.type != "CheckSuite" and .reason != "ci_activity") | {id: .id, title: .subject.title, type: .subject.type, repo: .repository.full_name, reason: .reason, updated_at: .updated_at, url: .subject.url}]' \
+        --jq '[.[] | {id: .id, title: .subject.title, type: .subject.type, repo: .repository.full_name, reason: .reason, url: .subject.url}]' \
         2>"${stderr_file}"); then
     local err
     err=$(tr '\n' ' ' <"${stderr_file}")
@@ -227,18 +230,18 @@ main() {
   # 空(未読なし)の場合は [] が返る
   [ -z "${raw}" ] && raw="[]"
 
+  raw=$(printf '%s' "${raw}" | jq -c --argjson reasons "${NOTIFY_REASONS}" \
+    'map(select(.reason as $reason | $reasons | index($reason)))') ||
+    fail "通知の絞り込みに失敗"
+
   local current
   current=$(printf '%s' "${raw}" |
-    jq 'map({key: .id, value: (.updated_at // "")}) | from_entries' 2>/dev/null) ||
+    jq 'map({key: .id, value: (.reason // "")}) | from_entries' 2>/dev/null) ||
     fail "通知 JSON のパースに失敗"
 
-  # 前回の状態を読む。旧形式(ID の配列)は現在の updated_at で埋めて移行し、
-  # 移行時に既存の通知が新着として再通知されないようにする
   local prev="{}" first_run=0
   if [ -f "${STATE_FILE}" ]; then
-    prev=$(jq --argjson current "${current}" \
-      'if type == "array" then (map({key: ., value: ($current[.] // "")}) | from_entries) else . end' \
-      "${STATE_FILE}" 2>/dev/null) || {
+    prev=$(jq '.' "${STATE_FILE}" 2>/dev/null) || {
       log "WARN 状態ファイルを読めないので初回扱いにする: ${STATE_FILE}"
       prev="{}"
       first_run=1
@@ -247,7 +250,7 @@ main() {
     first_run=1
   fi
 
-  # 新着 = ID が前回に無い、または updated_at が前回と違うもの
+  # 新着 = ID が前回に無い、または reason が前回と違うもの
   local changed_ids
   changed_ids=$(printf '%s' "${current}" | jq -r --argjson prev "${prev}" \
     'to_entries | map(select($prev[.key] != .value)) | .[].key') ||
