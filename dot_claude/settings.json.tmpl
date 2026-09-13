@@ -55,29 +55,7 @@
   },
   "model": "opus[1m]",
   "hooks": {
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/herdr-agent-state.sh blocked",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/herdr-agent-state.sh working",
-            "timeout": 10
-          }
-        ]
-      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -90,42 +68,13 @@
         ]
       }
     ],
-    "SessionEnd": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/herdr-agent-state.sh release",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/herdr-agent-state.sh idle",
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "~/.claude/hooks/herdr-agent-state.sh session",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/herdr-agent-state.sh idle",
             "timeout": 10
           }
         ]
@@ -135,11 +84,6 @@
       {
         "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/herdr-agent-state.sh working",
-            "timeout": 10
-          },
           {
             "type": "command",
             "command": "~/.claude/hooks/prompt-mode-context.sh",
@@ -183,7 +127,7 @@
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
-    "plannotator@plannotator": true
+    "plannotator@plannotator": false
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
