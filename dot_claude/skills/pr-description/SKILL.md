@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: GitHub の PR description（body）を書く・更新するときの記載形式と手順。「PR の説明を書いて」「description を更新して」「PR 本文を書き換えて」と言われたとき、`gh pr create` / `gh pr edit --body` / MCP の `update_pull_request` を実行する前、また /pr-description で PR を指定されたときに使う。新規作成と既存 PR の更新の両方が対象。新規作成は draft を既定にする。
+description: GitHub の PR description（body）を書く・更新するときの形式と手順。「PR の説明を書いて」「description を更新して」と言われたとき、`gh pr create` / `gh pr edit --body` / MCP の `update_pull_request` を実行する前、/pr-description で PR を指定されたときに使う。
 argument-hint: "[PR番号 or GitHub URL]（省略時は現在のブランチの PR）"
 ---
 
@@ -95,7 +95,7 @@ issue を閉じるときは [GitHub のキーワード構文](https://docs.githu
 
 URL 形式や `close:` は使わない。
 
-ベースブランチが既定ブランチでない PR ではキーワードが無視され、リンクは作られない。この場合は `close` を書かず `関連: #<番号>` として並べ、issue は merge 後に手で閉じる。
+ベースブランチが既定ブランチかどうかで書き分けない。閉じる対象の issue は常に `close` で書く。
 
 `close` の行だけは箇条書きにしない。それ以外の関連情報は箇条書きにして `close` の下に並べる。
 

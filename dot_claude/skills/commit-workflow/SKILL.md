@@ -1,6 +1,6 @@
 ---
 name: commit-workflow
-description: git commit を実行する・コミット計画（どの変更をどう分割するか）を立てるときのコミット粒度ルール。動作確認・レビュー・revert しやすい単位で分割する原則、差分から読み取れることを書かないコミットメッセージの書き方、コミット計画の事前提示、コミット前の関連 test・lint 実行（CI・pre-commit・scripts から検証項目を発見して漏れなく実行する手順を含む）、CLAUDE_AUTO_COMMIT による自動コミットの扱いを含む。`git commit --amend` / `git rebase` / `git reset` / force push で履歴を書き換える前にも読む。bot 以外・作成者以外のレビューが付いた PR のブランチでは書き換えず新しいコミットを積むルールと、その判定手順を扱う。
+description: git commit を実行する前、コミットの分割計画を立てるとき、自動コミットの可否を判断するとき、`git commit --amend` / `git rebase` / `git reset` / force push で履歴を書き換える前に読む。
 ---
 
 # コミット運用ルール
