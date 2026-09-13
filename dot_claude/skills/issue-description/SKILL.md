@@ -1,6 +1,6 @@
 ---
 name: issue-description
-description: GitHub の issue 本文（body）を書く・更新するときの記載形式と手順。「issue を作って」「issue の説明を書いて」「issue 本文を更新して」と言われたとき、`gh issue create` / `gh issue edit --body` / MCP の `issue_write` を実行する前、また /issue-description で issue を指定されたときに使う。新規作成と既存 issue の更新の両方が対象。更新時に他者の編集を上書きしないための現在 body の取得手順、親 issue・US の参照の置き方、節の構成、補足を details に畳む書き方を扱う。
+description: GitHub の issue 本文（body）を書く・更新するときの形式と手順。「issue を作って」「issue 本文を更新して」と言われたとき、`gh issue create` / `gh issue edit --body` / MCP の `issue_write` を実行する前、/issue-description で issue を指定されたときに使う。
 argument-hint: "[issue番号 or GitHub URL]（省略時は新規作成として扱う）"
 ---
 
