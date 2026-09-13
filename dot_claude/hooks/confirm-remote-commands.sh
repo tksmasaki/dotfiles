@@ -1,40 +1,23 @@
 #!/usr/bin/env bash
 # PreToolUse(Bash) フック:
-# リモートに影響する（外部に公開・反映される / 取り消しが難しい）コマンドを
-# 検知したら permissionDecision="ask" を返し、実行前に必ず確認させる。
+# 取り消せない、または外部に直接届くコマンドを検知したら permissionDecision="ask" を
+# 返し、実行前に必ず確認させる。ローカルで完結する操作（git commit）と、GitHub 上で
+# 後から直せる操作（gh pr / gh release / gh api の書き込み）は対象にしない。
 #
 # 検知対象:
-#   Git/GitHub:
-#     - git push / git commit（-C / -c / --no-pager 等のグローバルオプション挟みも含む）
-#     - git の任意ファイル書き出し・任意コマンド起動オプション
-#       (--output / --upload-pack / --receive-pack / --exec)
-#     - gh pr ... / gh release ...（--repo 等のフラグ挟みも含む）
-#     - gh repo create|delete / gh secret|variable set / gh workflow run
-#     - gh api で書き込みを伴うもの（-X/--method, -f/-F/--field/--raw-field, --input）
-#   パッケージ公開:
-#     - npm|yarn|pnpm publish / gem push / docker push
-#   デプロイ・インフラ:
-#     - kubectl apply|delete / terraform apply|destroy
-#     - gcloud ... deploy / cap ... deploy
+#   - git push（-C / -c / --no-pager 等のグローバルオプション挟みも含む）
+#   - git の任意ファイル書き出し・任意コマンド起動オプション
+#     (--output / --upload-pack / --receive-pack / --exec)
+#   - gh repo delete / gh secret|variable set / gh workflow run
+#   - npm|yarn|pnpm publish / gem push / docker push
+#   - kubectl apply|delete / terraform apply|destroy / gcloud ... deploy / cap ... deploy
 #
-# 例外（エスケープハッチ）:
-#   CLAUDE_AUTO_COMMIT=1 のとき、git commit のみ確認なしで通す。
-#   ただし同じコマンドに commit 以外のリモート影響コマンド（push 等）が
-#   含まれる場合は、引き続き確認を求める。
-#
-#   CLAUDE_SKIP_REMOTE_CONFIRM=1 のとき、この検知自体を無効化して
-#   すべて通常のパーミッション判定に委ねる。ローカルでフック自体の挙動を
-#   検証したいときなど、一時的な無効化のために使う
-#   （toggle-remote-confirm off で立てる。立てたままにすると push やデプロイ系も
-#   確認なしで通るので注意）
-#
-# どちらのフラグも、環境変数ではなくファイルの現在値を毎回読み直して判定する
-# （解決順は lib/claude-env.sh を参照。worktree ごとの claude-env.json が最優先で、
-# toggle-auto-commit / toggle-remote-confirm の書き込み先もそこ）。
-# 環境変数はセッション開始時のスナップショットなので、切り替えが実行中セッションに
+# CLAUDE_SKIP_REMOTE_CONFIRM=1 のとき、この検知自体を無効化して通常のパーミッション
+# 判定に委ねる（toggle-remote-confirm off で立てる。ローカルでフックの挙動を検証する
+# ための一時的な無効化で、立てたままにすると push やデプロイ系も確認なしで通る）。
+# 値は環境変数ではなくファイルの現在値を毎回読み直す（解決順は lib/claude-env.sh）。
+# 環境変数はセッション開始時のスナップショットで、切り替えが実行中セッションに
 # 反映されないため。ファイルを読めないときだけ環境変数にフォールバックする。
-#
-# 検知しない場合は何も出力せず、通常のパーミッション判定に委ねる。
 set -euo pipefail
 
 # shellcheck source=lib/claude-env.sh
@@ -47,8 +30,6 @@ cwd="$(printf '%s' "$input" | jq -r '.cwd // empty')"
 
 skip_remote_confirm="$(claude_env_current CLAUDE_SKIP_REMOTE_CONFIRM "$cwd")" \
   || skip_remote_confirm="${CLAUDE_SKIP_REMOTE_CONFIRM:-}"
-auto_commit="$(claude_env_current CLAUDE_AUTO_COMMIT "$cwd")" \
-  || auto_commit="${CLAUDE_AUTO_COMMIT:-}"
 
 # コマンド名の直前が行頭か、識別子・パスの一部にならない 1 文字であればよい。
 # 区切り(; & |)だけでなく、$( ( { 引用符 バックスラッシュ や、
@@ -63,39 +44,30 @@ git_cmd="git[[:space:]]+(${git_gopt})*"
 gh_flag='(-[[:alnum:]]|--[[:alnum:]-]+)(=[^[:space:]]*|[[:space:]]+[^-[:space:]][^[:space:]]*)?[[:space:]]+'
 gh_cmd="gh[[:space:]]+(${gh_flag})*"
 
-# git commit（エスケープハッチで個別に扱うため分離）
-commit_kw="${git_cmd}commit([^[:alnum:]_-]|$)"
+git_exec_kw='git[[:space:]]+([^;&|]*[[:space:]])?--(output|upload-pack|receive-pack|exec)([[:space:]=]|$)'
 
-# commit 以外の検知対象（リモート影響 / 取り消し困難）
-other_kw="${git_cmd}push([^[:alnum:]_-]|$)"
-other_kw+='|git[[:space:]]+([^;&|]*[[:space:]])?--(output|upload-pack|receive-pack|exec)([[:space:]=]|$)'
-other_kw+="|${gh_cmd}pr[[:space:]]+(${gh_flag})*(create|merge|close|edit|review|comment|reopen)([[:space:]]|$)"
-other_kw+="|${gh_cmd}release[[:space:]]+(${gh_flag})*(create|delete|upload|edit)([[:space:]]|$)"
-other_kw+="|${gh_cmd}repo[[:space:]]+(${gh_flag})*(create|delete)"
-other_kw+="|${gh_cmd}(secret|variable)[[:space:]]+(${gh_flag})*set"
-other_kw+="|${gh_cmd}workflow[[:space:]]+(${gh_flag})*run"
-other_kw+="|${gh_cmd}api([[:space:]]+[^;&|[:space:]]+)*[[:space:]]+(-X|-f|-F|--method|--field|--raw-field|--input)[^[:space:]]*"
-other_kw+='|(npm|yarn|pnpm)[[:space:]]+publish'
-other_kw+='|gem[[:space:]]+push'
-other_kw+='|docker[[:space:]]+push'
-other_kw+='|kubectl[[:space:]]+(apply|delete)'
-other_kw+='|terraform[[:space:]]+(apply|destroy)'
-other_kw+='|gcloud[[:space:]]+([^[:space:]]+[[:space:]]+)*deploy'
-other_kw+='|cap[[:space:]]+([^[:space:]]+[[:space:]]+)*deploy'
+kw="${git_cmd}push([^[:alnum:]_-]|$)"
+kw+="|${git_exec_kw}"
+kw+="|${gh_cmd}repo[[:space:]]+(${gh_flag})*delete"
+kw+="|${gh_cmd}(secret|variable)[[:space:]]+(${gh_flag})*set"
+kw+="|${gh_cmd}workflow[[:space:]]+(${gh_flag})*run"
+kw+='|(npm|yarn|pnpm)[[:space:]]+publish'
+kw+='|gem[[:space:]]+push'
+kw+='|docker[[:space:]]+push'
+kw+='|kubectl[[:space:]]+(apply|delete)'
+kw+='|terraform[[:space:]]+(apply|destroy)'
+kw+='|gcloud[[:space:]]+([^[:space:]]+[[:space:]]+)*deploy'
+kw+='|cap[[:space:]]+([^[:space:]]+[[:space:]]+)*deploy'
 
-pattern_full="${lead}(${commit_kw}|${other_kw})"
-pattern_other="${lead}(${other_kw})"
+pattern="${lead}(${kw})"
 
-# リモート影響コマンドでなければ通常判定に委ねる
-if ! printf '%s' "$cmd" | grep -qE "$pattern_full"; then
+if ! printf '%s' "$cmd" | grep -qE "$pattern"; then
   exit 0
 fi
 
-# エスケープハッチ: 検知そのものを無効化（ローカル検証用）。
 # 素通しするが、有効化されていることを systemMessage でユーザーに警告する
 # （permissionDecision は返さないので通常のパーミッション判定に委ねられる）
 if [ "$skip_remote_confirm" = "1" ]; then
-  # 表示用にコマンドを 200 文字で切る
   shown="$(printf '%s' "$cmd" | cut -c1-200)"
   [ "${#cmd}" -gt 200 ] && shown="${shown}..."
   jq -n --arg c "$shown" '
@@ -110,26 +82,68 @@ if [ "$skip_remote_confirm" = "1" ]; then
   exit 0
 fi
 
-# エスケープハッチ: CLAUDE_AUTO_COMMIT=1 かつ commit 以外の対象を含まない場合のみ素通し
-if [ "$auto_commit" = "1" ] && ! printf '%s' "$cmd" | grep -qE "$pattern_other"; then
-  exit 0
-fi
-
-# 検知したコマンドを列挙する（重複は除き、空白は 1 つに詰める）。
-# 抽出に失敗しても確認自体は行うため、失敗時は空にして総称の文言にフォールバックする。
-matched="$(
-  printf '%s' "$cmd" | grep -oE "$pattern_full" \
-    | sed -E 's/^[^[:alnum:]_.-]//' \
-    | sed -E 's/[[:space:]]+/ /g' \
-    | sed -E 's/[[:space:]]+$//' \
-    | awk 'NF && !seen[$0]++ {printf "%s%s", sep, $0; sep=", "}' \
+# 検知したコマンドを、区切り（; && || |）で切ったセグメント単位で取り出す。
+# キーワードだけを出すと git push と git push --force-with-lease が同じ文言になり、
+# 危険度を読み取れない。フラグまで含めるためにセグメントごと出す。
+# シェルの構文解析ではないので、引用符の中の区切りでも切る。コマンド全文は
+# パーミッションダイアログに出るため、表示用の抽出としてはこれで足りる。
+# 2>&1 のような >& は区切りではないので、切る前に退避する。
+ph="$(printf '\001')"
+segments="$(
+  printf '%s' "$cmd" \
+    | sed "s/>&/${ph}/g" \
+    | tr ';&|' '\n\n\n' \
+    | sed "s/${ph}/>\&/g" \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g' \
+    | grep -E "$pattern" \
+    | awk 'NF && !seen[$0]++' \
     || true
 )"
 
-if [ -n "$matched" ]; then
-  reason="リモートに影響するコマンドを検知しました: ${matched}。実行前に内容を確認してください。"
+# 危険度の分類。検知そのものには使わない（何を確認させるかは pattern が決める）。
+force_kw='(--force([^[:alnum:]_-]|$)|--force-with-lease|[[:space:]]-[[:alnum:]]*f[[:alnum:]]*([[:space:]]|$))'
+destroy_kw="${gh_cmd}repo[[:space:]]+(${gh_flag})*delete"
+destroy_kw+='|kubectl[[:space:]]+delete|terraform[[:space:]]+destroy'
+destroy_kw+="|${git_exec_kw}"
+
+irreversible=""
+publish=""
+
+if [ -n "$segments" ]; then
+  while IFS= read -r seg; do
+    [ -n "$seg" ] || continue
+    if printf '%s' "$seg" | grep -qE "${lead}${git_cmd}push" \
+      && printf '%s' "$seg" | grep -qE "$force_kw"; then
+      irreversible="${irreversible}${irreversible:+, }${seg}"
+    elif printf '%s' "$seg" | grep -qE "${lead}(${destroy_kw})"; then
+      irreversible="${irreversible}${irreversible:+, }${seg}"
+    else
+      publish="${publish}${publish:+, }${seg}"
+    fi
+  done <<< "$segments"
+fi
+
+if [ -n "$irreversible" ] || [ -n "$publish" ]; then
+  reason=""
+  [ -n "$irreversible" ] && reason+="取り消せません。リモートの履歴やリソースを上書き・削除します: ${irreversible}"$'\n'
+  [ -n "$publish" ] && reason+="外部に公開・反映されます: ${publish}"$'\n'
+  reason+="実行前に内容を確認してください。"
 else
-  reason="リモートに影響するコマンド（git push/commit, git --output/--upload-pack/--receive-pack/--exec, gh pr/release/repo/secret/workflow, gh api の書き込み, npm/yarn/pnpm publish, gem/docker push, kubectl apply/delete, terraform apply/destroy, gcloud/cap deploy 等）です。実行前に内容を確認してください。"
+  # セグメントに切れなかった場合の退避。確認自体は行うので、拾えた語だけ出す。
+  matched="$(
+    printf '%s' "$cmd" | grep -oE "$pattern" \
+      | sed -E 's/^[^[:alnum:]_.-]//' \
+      | sed -E 's/[[:space:]]+/ /g' \
+      | sed -E 's/[[:space:]]+$//' \
+      | awk 'NF && !seen[$0]++ {printf "%s%s", sep, $0; sep=", "}' \
+      || true
+  )"
+
+  if [ -n "$matched" ]; then
+    reason="リモートに影響するコマンドを検知しました: ${matched}。実行前に内容を確認してください。"
+  else
+    reason="リモートに影響するコマンド（git push, git --output/--upload-pack/--receive-pack/--exec, gh repo delete, gh secret/variable set, gh workflow run, npm/yarn/pnpm publish, gem/docker push, kubectl apply/delete, terraform apply/destroy, gcloud/cap deploy）です。実行前に内容を確認してください。"
+  fi
 fi
 
 jq -n --arg r "$reason" '
