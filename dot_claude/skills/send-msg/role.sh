@@ -13,6 +13,7 @@ usage() {
   cat >&2 <<'USAGE'
 usage:
   role.sh set <役割>    自セッション名を役割ファイルに書く
+  role.sh ensure        未登録なら自セッション名を役割名として登録する
   role.sh get <役割>    役割を `名前 [ref]` に解決する
   role.sh list          同じ作業ツリーの役割割り当てを出す
 USAGE
@@ -53,12 +54,26 @@ cmd_set() {
   printf '%s\t%s\n' "$role" "$name"
 }
 
+cmd_ensure() {
+  local name dir
+  name="$(self_name)"
+  [ -n "$name" ] || exit 0
+  case "$name" in
+    *[!A-Za-z0-9_-]* | '') exit 0 ;;
+  esac
+  dir="$(role_dir 2>/dev/null)" || exit 0
+  mkdir -p "$dir" 2>/dev/null || exit 0
+  grep -qxF "$name" "$dir"/* 2>/dev/null && exit 0
+  printf '%s\n' "$name" >"$dir/$name" 2>/dev/null || exit 0
+  printf '%s\t%s\n' "$name" "$name"
+}
+
 cmd_get() {
   local role="$1" dir file name matches count
   check_role_name "$role"
   dir="$(role_dir)" || exit 1
   file="$dir/$role"
-  [ -f "$file" ] || die "役割ファイルがありません: $file（相手がまだ役割を書いていません）"
+  [ -f "$file" ] || die "役割ファイルがありません: ${file}（相手がまだ役割を書いていません）"
   name="$(head -1 "$file" | tr -d '\r\n')"
   [ -n "$name" ] || die "役割ファイルが空です: $file"
 
@@ -66,7 +81,7 @@ cmd_get() {
   count="$(printf '%s' "$matches" | grep -c . || true)"
 
   if [ "$count" -eq 0 ]; then
-    die "$role として記録されている「$name」は、同じ作業ツリーで動いていません（終了したか別の作業ツリーにいます）"
+    die "$role として記録されている「${name}」は、同じ作業ツリーで動いていません（終了したか別の作業ツリーにいます）"
   fi
   if [ "$count" -gt 1 ]; then
     printf '%s に「%s」が %s 件あります。ref で選んでください:\n' "$role" "$name" "$count" >&2
@@ -77,7 +92,7 @@ cmd_get() {
   fi
 
   [ "$(printf '%s' "$matches" | cut -f1)" = self ] &&
-    die "$role は自分自身（$name）です。宛先にはなりません"
+    die "$role は自分自身（${name}）です。宛先にはなりません"
 
   printf '%s [%s]\n' "$name" "$(printf '%s' "$matches" | cut -f2)"
 }
@@ -106,6 +121,7 @@ cmd_list() {
 
 case "${1:-}" in
   set) [ $# -eq 2 ] || usage; cmd_set "$2" ;;
+  ensure) [ $# -eq 1 ] || usage; cmd_ensure ;;
   get) [ $# -eq 2 ] || usage; cmd_get "$2" ;;
   list) [ $# -eq 1 ] || usage; cmd_list ;;
   *) usage ;;

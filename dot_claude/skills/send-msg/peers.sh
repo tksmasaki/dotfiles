@@ -21,9 +21,9 @@ root_of() {
 }
 
 jq -r 'select(.messagingSocketPath and .name and .cwd)
-       | [.pid, .messagingSocketPath, .name, (.status // "-"), .cwd] | @tsv' \
+       | [.pid, .messagingSocketPath, .name, (.status // "-"), .cwd, (.entrypoint // "-")] | @tsv' \
   "$sessions"/*.json 2>/dev/null |
-while IFS=$'\t' read -r pid sock name status cwd; do
+while IFS=$'\t' read -r pid sock name status cwd entrypoint; do
   kill -0 "$pid" 2>/dev/null || continue
   ref="$(printf 'session:%s' "$sock" | shasum -a 256 | cut -c1-6)"
   if [ "$sock" = "${CLAUDE_CODE_MESSAGING_SOCKET:-}" ]; then
@@ -39,5 +39,5 @@ while IFS=$'\t' read -r pid sock name status cwd; do
     same) order=1 ;;
     *) order=2 ;;
   esac
-  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$order" "$scope" "$name" "$ref" "$status" "$cwd"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$order" "$scope" "$name" "$ref" "$status" "$cwd" "$entrypoint"
 done | sort -t$'\t' -k1,1n -k3,3 -k4,4 | cut -f2-
