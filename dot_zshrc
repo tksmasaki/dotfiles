@@ -39,78 +39,85 @@ eval "$(zoxide init zsh)"
 # ============================== End zoxide
 
 # ============================== aliases
+# Claude Code の Bash は非対話 zsh で動き、ZLE 依存の abbr が展開されないため alias も定義する
+ab() {
+	abbr -S "$@"
+	[[ -n $CLAUDECODE ]] && alias -- "${@[-1]}"
+}
 abbr -S -f ls='ls -F --color=auto'
 abbr -S -f cp='cp -i'
 abbr -S -f mv='mv -i'
 abbr -S -f rm='rm -i'
 abbr -S -f ln='ln -i'
-abbr -S -f mkdir='mkdir -p'
+ab -f mkdir='mkdir -p'
 abbr -S -f grep='grep --color=auto'
-abbr -S -f sudo='sudo '
-abbr -S -f vi='vim'
+ab -f sudo='sudo '
+ab -f vi='vim'
 abbr -S ll='ls -lF --color=auto'
 abbr -S la='ls -AF --color=auto'
 abbr -S lla='ls -lAF --color=auto'
 abbr -S cpr='cp -ir'
-abbr -S sz='source ~/.zshrc'
-abbr -S vz='vim ~/.zshrc'
-abbr -S cz='code ~/.zshrc'
-abbr -S clz="code ~/local/.zshrc"
-abbr -S vlz="vim ~/local/.zshrc"
-abbr -S cdocs='code ~/Documents/vault'
+ab sz='source ~/.zshrc'
+ab vz='vim ~/.zshrc'
+ab cz='code ~/.zshrc'
+ab clz="code ~/local/.zshrc"
+ab vlz="vim ~/local/.zshrc"
+ab cdocs='code ~/Documents/vault'
 # git
-abbr -S -f g='git'
-abbr -S gb='git branch -vv'
-abbr -S gbd='git branch -D'
-abbr -S gco='git checkout'
-abbr -S gcfl='git config -l'
-abbr -S glgo='git log --graph --oneline'
-abbr -S glog='git log'
-abbr -S glogg='git log -G'
-abbr -S glogs='git log -S'
-abbr -S glogdeletefile='git log --diff-filter=D --name-status --'
-abbr -S gpulr='git pull --rebase'
-abbr -S gpulrmain='git pull --rebase origin main'
-abbr -S gpulrmaster='git pull --rebase origin master'
-abbr -S gpusf='git push --force-with-lease'
-abbr -S gs='git status'
-abbr -S gw='git worktree'
-abbr -S gwl='git worktree list'
-abbr -S gwr='git wtrm'
+ab -f g='git'
+ab gb='git branch -vv'
+ab gbd='git branch -D'
+ab gco='git checkout'
+ab gcfl='git config -l'
+ab glgo='git log --graph --oneline'
+ab glog='git log'
+ab glogg='git log -G'
+ab glogs='git log -S'
+ab glogdeletefile='git log --diff-filter=D --name-status --'
+ab gpulr='git pull --rebase'
+ab gpulrmain='git pull --rebase origin main'
+ab gpulrmaster='git pull --rebase origin master'
+ab gpusf='git push --force-with-lease'
+ab gs='git status'
+ab gw='git worktree'
+ab gwl='git worktree list'
+ab gwr='git wtrm'
 # abbr -S gsw='git switch'
-abbr -S gswc='git switch -c'
-abbr -S galias='git config --get-regexp ^alias'
-abbr -S gexclude='vim .git/info/exclude'
+ab gswc='git switch -c'
+ab galias='git config --get-regexp ^alias'
+ab gexclude='vim .git/info/exclude'
 # claude
-abbr -S cla='claude'
-abbr -S clac='claude --continue'
-abbr -S clar='claude --resume'
+ab cla='claude'
+ab clac='claude --continue'
+ab clar='claude --resume'
+ab tacm='toggle-auto-commit'
+ab trcf='toggle-remote-confirm'
 # ruby
-abbr -S gemclean='gem uninstall -I -a -x --user-install --force'
-abbr -S be='bundle exec'
-abbr -S bi='bundle install'
+ab gemclean='gem uninstall -I -a -x --user-install --force'
+ab be='bundle exec'
+ab bi='bundle install'
 # act
-abbr -S aj='act -j'
-abbr -S al='act --list'
+ab aj='act -j'
+ab al='act --list'
 # docker
-abbr -S dit='docker exec -it'
+ab dit='docker exec -it'
 # VSCode: https://code.visualstudio.com/docs/setup/mac#_launching-from-the-command-line
-abbr -S -f c='code'
-abbr -S cn='code -n'
-abbr -S cr='code -r'
+ab -f c='code'
+ab cn='code -n'
+ab cr='code -r'
 # devcontainer
-abbr -S dcz='devcontainer exec --remote-env TERM=xterm-256color zsh'
+ab dcz='devcontainer exec --remote-env TERM=xterm-256color zsh'
 # chezmoi
-abbr -S -f cm='chezmoi'
-abbr -S cmcd='chezmoi cd'
-abbr -S cmap='chezmoi apply'
-abbr -S cdots="code $(chezmoi source-path)"
+ab -f cm='chezmoi'
+ab cmcd='chezmoi cd'
+ab cmap='chezmoi apply'
+ab cdots="code $(chezmoi source-path)"
 # Alacritty
-abbr -S val='vim ~/.config/alacritty/alacritty.toml'
+ab val='vim ~/.config/alacritty/alacritty.toml'
 # herdr
-abbr -S hrs='herdr workspace create --cwd ~/src --label "src"'
-abbr -S hrd='herdr workspace create --cwd ~/.local/share/chezmoi --label "dotfiles"'
-abbr -S hr='herdr'
+ab hrs='herdr workspace create --cwd ~/src --label "src"'
+ab hrd='herdr workspace create --cwd ~/.local/share/chezmoi --label "dotfiles"'
+ab hr='herdr'
 # ============================== End aliases
 
 #	============================== repository manager
