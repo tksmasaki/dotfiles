@@ -18,6 +18,10 @@
 
 既存ファイルの編集は symlink 経由で即座に反映される。新規追加・リネーム・削除は `chezmoi apply` を実行するまで `$HOME` 側に現れない。
 
+ソースを削除・リネームしても、apply は適用先の古い symlink を消さない。改名した skill や hook は、apply のあとに `$HOME` 側の旧パスを手で消す。
+
+skill / rules を編集しても実行中のセッションには反映されない。そのセッションで使うなら `/reload-skills` を打つ。
+
 `$HOME` 側にある既存ファイルを管理下に入れるときは `chezmoi add <適用先パス>`。add はソースにコピーを作るだけで、適用先は通常ファイルのまま残るので、続けて `chezmoi apply <適用先パス>` を実行して symlink に置き換える。忘れると `$HOME` 側の編集がソースに反映されない。
 
 symlink にならない管理対象は `~/.claude/settings.json` だけ。`install.sh` は apply 後に通常ファイルとして残った管理対象を列挙して警告する。
