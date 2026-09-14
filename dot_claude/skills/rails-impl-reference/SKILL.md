@@ -1,5 +1,5 @@
 ---
-name: rails-implementation-reference
+name: rails-impl-reference
 description: Rails アプリを実装するときに引く外部資料のインデックス。クラスの置き場、ファイル名と定数の対応、PORO の置き場、concern を作る判断、ジョブの再試行と冪等性、トランザクション、日付時刻の計算、テストでの時刻固定、spec の構造といった論点から、Rails Guides / API リファレンス / 各 Style Guide / Sidekiq / 37signals のどれを読むかを引き当てる。資料の要約ではなく原文への入口。
 ---
 
