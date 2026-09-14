@@ -8,13 +8,11 @@
 
 `exact_` プレフィックスは使わない。`~/.claude` や `~/.local/bin` には mise や各ツールが置いた symlink と管理外のファイルが同居していて、`exact_` を付けると `chezmoi apply` でそれらが削除される。
 
-初回構築は `./install.sh`。Homebrew・sheldon・mise・chezmoi・herdr を入れて `chezmoi init --apply tksmasaki` まで実行する。`--local` を付けると `setup_for_local.sh` も走り、Claude Code と GitHub Copilot CLI が入る。Alacritty は自動で入らず、未インストールなら警告だけ出る。
-
 ## 編集の入口
 
 `.chezmoi.toml.tmpl` で `mode = "symlink"` を指定しているため、テンプレート以外の管理対象は `$HOME` 側がソースへの symlink になる。`~/.claude/CLAUDE.md` や `~/.claude/hooks/*.sh` はどちら側から編集しても同じ実体。
 
-テンプレート（`*.tmpl`）だけは実体のコピーになる。現在は `.chezmoi.toml.tmpl` と `dot_claude/settings.json.tmpl` の 2 つ。`~/.claude/settings.json` を直接編集しても次の `chezmoi apply` で消えるので、`dot_claude/settings.json.tmpl` を編集して apply する。
+テンプレート（`*.tmpl`）だけは実体のコピーになる。`~/.claude/settings.json` を直接編集しても次の `chezmoi apply` で消えるので、`dot_claude/settings.json.tmpl` を編集して apply する。
 
 既存ファイルの編集は symlink 経由で即座に反映される。新規追加・リネーム・削除は `chezmoi apply` を実行するまで `$HOME` 側に現れない。
 
@@ -39,13 +37,8 @@ symlink にならない管理対象は `~/.claude/settings.json` だけ。`insta
 ## コマンド
 
 ```bash
-chezmoi status                                 # 差分のあるファイル
-chezmoi managed --exclude=dirs                 # 管理下のファイル一覧
 chezmoi diff ~/.claude/settings.json           # 適用先の絶対パスで渡す
-chezmoi apply
 chezmoi source-path ~/.claude/settings.json    # 適用先からソースを引く
-chezmoi apply --dry-run -v                     # 適用結果だけ見る
-chezmoi execute-template < dot_claude/settings.json.tmpl | jq .   # テンプレートの展開結果
 ```
 
 ## ソース直下にファイルを置くとき
