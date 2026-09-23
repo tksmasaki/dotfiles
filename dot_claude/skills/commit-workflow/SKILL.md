@@ -70,14 +70,14 @@ gh api repos/{owner}/{repo}/pulls/<番号>/reviews \
 
 ### 検証項目の発見（漏れを防ぐ手順）
 
-「どの lint・test を実行すべきか」を記憶や推測で列挙しない。個別ツール名（eslint / cspell / prettier など）を思い出す方式は必ず取りこぼす。代わりに、commit の前に**リポジトリ内の権威ある定義を読み、検証項目の集合を毎回その場で列挙する**。以下を上から順に確認し、見つかったものをすべて検証項目に加える。
+「どの lint・test を実行すべきか」を記憶や推測で列挙しない。記憶から挙げた集合には、そのリポジトリにしかないチェックが入らない。代わりに、commit の前に**リポジトリ内の権威ある定義を読み、検証項目の集合を毎回その場で列挙する**。以下を上から順に確認し、見つかったものをすべて検証項目に加える。
 
 1. **CI 設定**（最優先・最も網羅的）: `.github/workflows/*.yml`、`.gitlab-ci.yml`、`.circleci/config.yml` 等。PR/push で走る job・step を読み、そこで実行されるチェック（lint・型・test・spell check 等）を列挙する。CI が通す条件がコミットが満たすべき条件なので、これを基準にする。
 2. **pre-commit / commit フック定義**: `.pre-commit-config.yaml`、`lefthook.yml`、`.husky/`、`lint-staged` 設定（package.json / `.lintstagedrc*`）。commit 時に本来走るチェックが列挙されている。
 3. **タスクランナのスクリプト**: `package.json` の `scripts`（`lint`、`lint:*`、`typecheck`、`test`、`spell*`、`check` など集約タスクを含む）、`Makefile`、`Taskfile.yml`、`justfile`、`composer.json` 等。集約タスク（例: `npm run lint` が内部で複数ツールを呼ぶ）があればそれを優先して使う。
 4. 上記が存在しない場合に限り、設定ファイルの実在（`.cspell.json`、`.eslintrc*`、`ruff.toml` 等）から個別ツールを推定してよい。
 
-列挙した項目のうち、変更内容に関連するものを漏れなく実行する。**cspell / spell check のように「関連ファイルがあれば必ず対象になる」種類のチェックは、lint の一部として扱い省略しない。** どれを実行しどれを範囲外としたかを判断できる状態にしておく。
+列挙した項目のうち、変更内容に関連するものを漏れなく実行する。関連するかどうかは、そのチェックが変更したファイルを対象に含むかで決める。どれを実行しどれを範囲外としたかを判断できる状態にしておく。
 
 ### 実行と結果の扱い
 
