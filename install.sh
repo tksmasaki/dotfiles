@@ -71,6 +71,7 @@ fi
 
 echo "Apply dotfiles with chezmoi"
 chezmoi init --apply tksmasaki
+git -C "$(chezmoi source-path)" config core.hooksPath .githooks
 
 unsynced="$(chezmoi managed --include=files --path-style=absolute)"
 if [[ -n "$unsynced" ]]; then

@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+denylist="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/public-denylist.txt"
+if [[ ! -f "$denylist" ]]; then
+	echo "pre-push: $denylist が無いため、禁止語の検査を飛ばす" >&2
+	exit 0
+fi
+
+patterns="$(mktemp)"
+trap 'rm -f "$patterns"' EXIT
+grep -v -e '^[[:space:]]*$' -e '^#' "$denylist" > "$patterns" || true
+[[ -s "$patterns" ]] || exit 0
+
+zero="0000000000000000000000000000000000000000"
+found=0
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+	[[ "$local_sha" == "$zero" ]] && continue
+	if [[ "$remote_sha" == "$zero" ]]; then
+		commits="$(git rev-list "$local_sha" --not --remotes)"
+	else
+		commits="$(git rev-list "$remote_sha..$local_sha")"
+	fi
+	for commit in $commits; do
+		hits="$(
+			{
+				git log -1 --format='%B' "$commit"
+				git show --format= --name-only "$commit"
+				git show --format= --unified=0 "$commit" | grep '^+' | grep -v '^+++' || true
+			} | grep -ioF -f "$patterns" | sort -u || true
+		)"
+		if [[ -n "$hits" ]]; then
+			found=1
+			echo "pre-push: $(git log -1 --format='%h %s' "$commit") に禁止語がある: $(echo "$hits" | paste -sd ',' -)" >&2
+		fi
+	done
+done
+
+exit "$found"

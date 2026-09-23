@@ -2,6 +2,12 @@
 
 ドットファイルを chezmoi で管理する。ソースは `~/.local/share/chezmoi`、適用先は `$HOME`。
 
+## このリポジトリは公開されている
+
+コミットメッセージとファイルに、他のリポジトリ名・組織名・業務の中身を書かない。別のリポジトリから持ち込んだ変更は「作業中のリポジトリ」「元のリポジトリ」と書く。
+
+`.githooks/pre-push` が、push するコミットのメッセージ・ファイル名・追加行を `~/.config/dotfiles/public-denylist.txt` の語と照合し、当たれば push を止める。一覧を公開しないため、このファイルは chezmoi の管理外に置く。hook は `install.sh` が `core.hooksPath` を設定して有効にする。
+
 ## 管理対象
 
 ソースの `dot_<名前>` が `~/.<名前>` に対応する。`dot_claude/skills/foo/SKILL.md` は `~/.claude/skills/foo/SKILL.md`、`dot_zshrc` は `~/.zshrc` になる。個々のファイルはここに列挙しない。現在の一覧は `chezmoi managed --exclude=dirs` で引く。
