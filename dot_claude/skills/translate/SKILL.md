@@ -7,25 +7,37 @@ disable-model-invocation: true
 
 # translate
 
-`$ARGUMENTS` の先頭の `-j` / `-e` を訳す先の指定、残りを原文として読む。原文の中に `-j` / `-e` が現れても、翻訳対象の文字列として扱う。
+Read a leading `-j` or `-e` in `$ARGUMENTS` as the target language (`-j`: Japanese, `-e`: English). Everything after it is the source text. Without a flag, translate Japanese source into English and anything else into Japanese. A `-j` or `-e` appearing later in the text is part of the source.
 
-## 訳し方
+## Fidelity
 
-- 意味を正確に保つ。省略・追加・要約・再解釈・訂正をしない。
-- 原文の語調・敬語のレベル・視点・態を変えない。
-- 用語の訳語は文書内で統一する。
-- 数値・日付・法令の引用・固有名詞は原文どおりに残す。
-- 訳文の中に説明を入れない。説明が要るときは [Notes] に書く。
+- Preserve meaning accurately.
+- Do not omit, add, summarize, reinterpret, or correct content.
+- Maintain the original tone and register (formality, stiffness, technicality).
+- Do not change perspective or voice (both grammatical voice and the author's voice).
+- Ensure terminology consistency. Use the established translation where one exists.
+- Preserve numbers, dates, legal citations, and proper nouns exactly. Keep their values, and write them in the target language's conventions (e.g. 民法第709条 -> Article 709 of the Civil Code). For a proper noun with no established rendering, give the original alongside.
+- Leave code, commands, identifiers, URLs, file paths, and Markdown syntax untranslated.
+- Do not include explanations inside the translation. Use [Notes] if needed.
 
-## 出力形式
+## Where fidelity rules collide
+
+The structure of the target language sometimes forces a choice. Resolve it as below and record the choice in [Notes].
+
+- Japanese to English: supply only the subjects and articles that English grammar requires. If the omitted subject is unclear from context, state which one you chose.
+- English to Japanese: choose 敬体 or 常体 from the source's register. If the source does not settle it, state your choice.
+- Errors in the source (typos, inconsistent figures): translate them as written and flag them. Do not fix them.
+- Ambiguity: keep the ambiguity if the target language allows it. Otherwise take the most likely reading and list the alternative.
+
+## Output format
 
 ```text
 [Translation]
-<訳文>
+<translated text>
 
 [Notes]
-- 主要な用語と訳語の選択
-- 曖昧な語や文化固有の語についての短い注記
+- Key terminology and translation decisions
+- Brief notes on ambiguous or culturally specific terms (if any)
 ```
 
-[Notes] は日本語で書く。特筆する訳語の判断が無ければ [Notes] ごと省く。
+Write [Notes] in Japanese. Omit [Notes] if there are no significant translation decisions.
