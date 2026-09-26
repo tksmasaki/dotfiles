@@ -1,4 +1,7 @@
 [tools]
+aws-cli = "latest"
+docker-cli = "latest"
+docker-compose = "latest"
 fzf = "latest"
 gh = "latest"
 ghq = "latest"
