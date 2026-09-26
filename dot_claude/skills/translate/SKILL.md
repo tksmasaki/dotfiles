@@ -16,13 +16,14 @@ Read a leading `-j` or `-e` in `$ARGUMENTS` as the target language (`-j`: Japane
 - Maintain the original tone and register (formality, stiffness, technicality).
 - Do not change perspective or voice (both grammatical voice and the author's voice).
 - Ensure terminology consistency. Use the established translation where one exists.
-- Preserve numbers, dates, legal citations, and proper nouns exactly. Keep their values, and write them in the target language's conventions (e.g. 民法第709条 -> Article 709 of the Civil Code). For a proper noun with no established rendering, give the original alongside.
-- Leave code, commands, identifiers, URLs, file paths, and Markdown syntax untranslated.
+- Preserve numbers, dates, and legal citations exactly. Keep their values, and write them in the target language's conventions (e.g. 民法第709条 -> Article 709 of the Civil Code).
+- Preserve proper nouns exactly. Render them in their established form; if none exists, give the original alongside.
+- Leave code, commands, identifiers, URLs, file paths, and Markdown syntax untranslated. Translate comments inside code, but not the code itself.
 - Do not include explanations inside the translation. Use [Notes] if needed.
 
 ## Where fidelity rules collide
 
-The structure of the target language sometimes forces a choice. Resolve it as below and record the choice in [Notes].
+The structure of the target language sometimes forces a choice. Resolve it as below. Anything you state, flag, or list goes in [Notes].
 
 - Japanese to English: supply only the subjects and articles that English grammar requires. If the omitted subject is unclear from context, state which one you chose.
 - English to Japanese: choose 敬体 or 常体 from the source's register. If the source does not settle it, state your choice.
@@ -40,4 +41,4 @@ The structure of the target language sometimes forces a choice. Resolve it as be
 - Brief notes on ambiguous or culturally specific terms (if any)
 ```
 
-Write [Notes] in Japanese. Omit [Notes] if there are no significant translation decisions.
+Do not wrap the output in a code block. Write [Notes] in Japanese. Omit [Notes] if there are no significant translation decisions.
