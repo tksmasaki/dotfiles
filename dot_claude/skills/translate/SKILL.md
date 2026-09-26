@@ -1,13 +1,23 @@
 ---
 name: translate
-description: 渡した文を日本語か英語に翻訳する。`-j` で日本語へ、`-e` で英語へ訳す。どちらも無ければ原文と逆の言語（日本語なら英語、それ以外なら日本語）へ訳す。`--md` で訳文を md ファイルに書き出す。
-argument-hint: "[-j | -e] [--md] <翻訳する文>"
+description: 渡した文を日本語か英語に翻訳する。`-j` で日本語へ、`-e` で英語へ訳す。どちらも無ければ原文と逆の言語（日本語なら英語、それ以外なら日本語）へ訳す。`--md` で訳文を md ファイルに書き出す。文の代わりに URL を渡すと、そのページの本文を訳す。
+argument-hint: "[-j | -e] [--md] <翻訳する文 | URL>"
 disable-model-invocation: true
 ---
 
 # translate
 
 Read the leading flags in `$ARGUMENTS`, in any order. `-j` or `-e` sets the target language (`-j`: Japanese, `-e`: English). `--md` writes the result to a Markdown file (see "Markdown output"). Everything after the flags is the source text. Without `-j` or `-e`, translate Japanese source into English and anything else into Japanese. A flag appearing later in the text is part of the source.
+
+## URL source
+
+When the source is a single URL and nothing else, translate the article body of that page. Get the page's own content, never a summary of it. Do not use WebFetch: it returns a model's answer about the page, not the page.
+
+1. Fetch the raw HTML with `curl -sL`. Use it when the article body is in the HTML.
+2. If curl fails, or the body is not in the HTML (rendered by JavaScript, a login wall, a bot check), open the URL in Chrome with the claude-in-chrome tools and read the rendered page. Do not read cookies or web storage.
+3. If Chrome cannot show the body either, stop. Tell the user which methods failed and why, and do not translate from memory or from a partial page.
+
+Translate the body only. Leave out site navigation, sidebars, comments, and share buttons. Keep the article's links, images, headings, quotations, and tables, and carry their URLs into the translation as Markdown links, resolving relative URLs against the page URL. State the page URL, and the author and date when the page gives them, at the top of the translation.
 
 ## Fidelity
 
