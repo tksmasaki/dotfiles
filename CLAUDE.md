@@ -40,6 +40,8 @@ symlink にならない管理対象は `~/.claude/settings.json` だけ。`insta
 
 `settings.json.tmpl` は `~/.config/claude/env.json` があればそのキーと値を `env` に追加する。chezmoi の管理外で、マシンごとに置く。`env.json` には md-output skill が読む `MD_OUTPUT_DIR` のような、マシン固有のパスを入れる。
 
+`~/.config/claude/plugins.json` も同じ仕組みで `enabledPlugins` に追加する。公開リポジトリに名前を書けないプラグインをここに置く。
+
 ## コマンド
 
 ```bash

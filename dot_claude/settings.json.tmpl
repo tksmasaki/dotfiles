@@ -122,15 +122,18 @@
     "ruby-lsp@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
-    "playground@claude-plugins-official": false,
     "pr-review-toolkit@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": false,
-    "commit-commands@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "figma@claude-plugins-official": true,
-    "plannotator@plannotator": false
+    "playwright@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
+{{- $pluginsPath := joinPath .chezmoi.homeDir ".config/claude/plugins.json" }}
+{{- if stat $pluginsPath }}
+{{- range $k, $v := include $pluginsPath | fromJson }},
+    {{ $k | toJson }}: {{ $v | toJson }}
+{{- end }}
+{{- end }}
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -143,12 +146,6 @@
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-community"
-      }
-    },
-    "plannotator": {
-      "source": {
-        "source": "github",
-        "repo": "backnotprop/plannotator"
       }
     }
   },
