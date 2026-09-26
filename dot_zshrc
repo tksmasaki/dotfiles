@@ -6,6 +6,7 @@ setopt ignoreeof
 setopt pushd_ignore_dups
 setopt share_history
 [[ -n $CLAUDECODE ]] || setopt noclobber
+[[ -n $CLAUDECODE ]] && setopt no_nomatch no_equals
 
 HISTFILE=~/.zsh_history
 HISTORY_IGNORE="(l[sla]|lla|pwd|history|ps)"
