@@ -1,13 +1,13 @@
 ---
 name: translate
-description: 渡した文を日本語か英語に翻訳する。`-j` で日本語へ、`-e` で英語へ訳す。どちらも無ければ原文と逆の言語（日本語なら英語、それ以外なら日本語）へ訳す。
-argument-hint: "[-j | -e] <翻訳する文>"
+description: 渡した文を日本語か英語に翻訳する。`-j` で日本語へ、`-e` で英語へ訳す。どちらも無ければ原文と逆の言語（日本語なら英語、それ以外なら日本語）へ訳す。`--md` で訳文を md ファイルに書き出す。
+argument-hint: "[-j | -e] [--md] <翻訳する文>"
 disable-model-invocation: true
 ---
 
 # translate
 
-Read a leading `-j` or `-e` in `$ARGUMENTS` as the target language (`-j`: Japanese, `-e`: English). Everything after it is the source text. Without a flag, translate Japanese source into English and anything else into Japanese. A `-j` or `-e` appearing later in the text is part of the source.
+Read the leading flags in `$ARGUMENTS`, in any order. `-j` or `-e` sets the target language (`-j`: Japanese, `-e`: English). `--md` writes the result to a Markdown file (see "Markdown output"). Everything after the flags is the source text. Without `-j` or `-e`, translate Japanese source into English and anything else into Japanese. A flag appearing later in the text is part of the source.
 
 ## Fidelity
 
@@ -42,3 +42,11 @@ The structure of the target language sometimes forces a choice. Resolve it as be
 ```
 
 Do not wrap the output in a code block. Write [Notes] in Japanese. Omit [Notes] if there are no significant translation decisions.
+
+## Markdown output
+
+With `--md`, write the translation to a file instead of the chat. Load the `md-output` skill and follow it for the output directory, the file name, and the chat reply after writing.
+
+- Restore the source's structure as Markdown: the title as `#`, section headings as `##`, block quotations as `>`, lists, and tables. Change only the markup, never the wording of the translation.
+- Leave out the `[Translation]` label.
+- Put the [Notes] content in a final `## 訳注` section after a `---` rule. Write it in 常体, or in 敬体 when the translation into Japanese uses 敬体. Omit the section when [Notes] would be omitted.
