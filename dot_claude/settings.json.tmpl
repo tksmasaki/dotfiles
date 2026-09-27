@@ -56,6 +56,10 @@
     ],
     "defaultMode": "auto"
   },
+{{- $deniedMcpPath := joinPath .chezmoi.homeDir ".config/claude/denied-mcp-servers.json" }}
+{{- if stat $deniedMcpPath }}
+  "deniedMcpServers": {{ include $deniedMcpPath | fromJson | toJson }},
+{{- end }}
   "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
