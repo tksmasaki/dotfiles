@@ -36,6 +36,8 @@ symlink にならない管理対象は `~/.claude/settings.json` だけ。`insta
 
 `~/` 側の変更を残す場合、テンプレートなので `chezmoi re-add` では取り込めない。`chezmoi diff ~/.claude/settings.json` で差分を見て `dot_claude/settings.json.tmpl` に手で書き戻す。
 
+テンプレートの値で上書きすると決めたら `chezmoi apply --force ~/.claude/settings.json` を実行する。`--force` が無いと chezmoi は上書きするか対話で聞き、Claude のセッションからは答えられずに止まる。
+
 衝突を保留したまま他のファイルだけ適用したいときは、適用先パスを渡す。`chezmoi apply ~/.local/bin/roles-up` のように書けば `settings.json` に触らずに済む。
 
 `settings.json.tmpl` は `~/.config/claude/env.json` があればそのキーと値を `env` に追加する。chezmoi の管理外で、マシンごとに置く。`env.json` には md-output skill が読む `MD_OUTPUT_DIR` のような、マシン固有のパスを入れる。
