@@ -61,6 +61,11 @@
   "deniedMcpServers": {{ include $deniedMcpPath | fromJson | toJson }},
 {{- end }}
   "model": "opus[1m]",
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    }
+  },
   "hooks": {
     "PreToolUse": [
       {
