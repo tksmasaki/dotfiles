@@ -25,7 +25,7 @@ argument-hint: "[issue番号 or GitHub URL]（省略時は新規作成として�
 
 新規作成でも本文はファイルに書き出し、`gh issue create --title <タイトル> --body-file <ファイル>` で作る。`--body` に長文を直接渡さない。改行やバッククォートがシェルで壊れるのを避けるため。
 
-画像の添付は `~/.claude/rules/github-attachments.md` に従う。
+画像の添付は `~/.claude/references/github-attachments.md` に従う。
 
 ## 起票の前に既にあるかを探す
 
