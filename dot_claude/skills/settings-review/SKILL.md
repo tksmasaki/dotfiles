@@ -1,7 +1,6 @@
 ---
 name: settings-review
-description: セッションログから Claude の設定を見直す作業を、前回の引き継ぎメモから始める。/settings-review で使う。
-disable-model-invocation: true
+description: セッションログから Claude の設定を見直す作業を、前回の引き継ぎメモから始める。/settings-review と、「settings-review を実行して」のように skill 名を挙げて頼まれたときだけ使う。設定の質問や個別の設定変更では使わない。
 ---
 
 # settings-review
