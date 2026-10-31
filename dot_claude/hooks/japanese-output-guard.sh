@@ -5,6 +5,7 @@ set -eu
 
 exec python3 -I -c '
 import json
+import os
 import re
 import sys
 
@@ -13,7 +14,7 @@ if payload.get("stop_hook_active"):
     sys.exit(0)
 
 path = payload.get("transcript_path")
-if not path:
+if not path or not os.path.exists(path):
     sys.exit(0)
 
 entries = []
