@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# git-mkwt - 隔離された git worktree を作り、git 管理外の個人ファイルを引き継ぐ
-#
-# PATH 上に git-mkwt があるため `git mkwt <引数>` として呼べる。
-# 標準出力には worktree の絶対パスだけを出す（cd との合成用）。進捗・警告は標準エラーに出す。
-
 set -euo pipefail
 
 usage() {
@@ -13,6 +8,8 @@ git-mkwt - 隔離された git worktree を作り、git 管理外の個人ファ
 Usage:
   git mkwt <PR番号 | GitHub PR URL | 新規ブランチ名> [起点]
   git mkwt -h                      # `git mkwt --help` は git が man を引いてしまうので -h を使う
+
+  標準出力には worktree の絶対パスだけを出す。進捗・警告は標準エラーに出す。
 
 引数:
   PR番号 / GitHub PR URL   その PR の HEAD を反映した worktree を作る
