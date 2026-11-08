@@ -16,9 +16,11 @@ Usage:
 
 引数:
   PR番号 / GitHub PR URL   その PR の HEAD を反映した worktree を作る
-                           ブランチは PR の head ブランチ名をそのまま使う
-                           （同一リポジトリの PR なら origin/{head} を追跡するので
-                             そのまま commit して push で PR に返せる）
+                           同一リポジトリの PR は head ブランチ名をそのまま使い、origin/{head} を
+                           追跡するので、そのまま commit して push で PR に返せる
+                           フォークの PR は pr-{番号} というブランチにする。head 名（main など）が
+                           手元のブランチと重なるため。SETUP_COMMANDS は実行せず案内だけ出す
+                           （第三者のコードで依存の導入を走らせないため）
   新規ブランチ名           指定起点から新しいブランチを切って worktree を作る
   起点                     新規ブランチ時のみ有効
                            省略時   現在のブランチの HEAD（push 前のコミットも含む）
@@ -39,13 +41,20 @@ Usage:
   .git の中なので、git で追跡されたり他の worktree とずれたりしない。
 
     LINK_PATHS=(...)        メイン作業ツリーから symlink で引き継ぐパス。glob を書ける
-                            （例: .claude/skills/*）。worktree 側に既にあるものは触らない
+                            （例: '.claude/skills/*'）。worktree 側に既にあるものは触らない
+                            既定は (.claude/settings.local.json CLAUDE.local.md)。代入すると
+                            既定は置き換わるので、残したいものも並べる
     ENV_TEMPLATE=".env_local"  worktree の .env としてコピーする雛形（既定は空 = 無効）
     ENV_FILES=(...)         名前を変えずにコピーするファイル（既定は空）
-    LOCAL_PATCH_FILES=(...) 追跡ファイルに当てている手元の変更を新規 worktree にも複製し、
-                            skip-worktree で git status から隠す（既定は空）
+    LOCAL_PATCH_FILES=(...) 追跡ファイルに当てている手元の変更を新規 worktree にも持ち込み、
+                            skip-worktree で git status から隠す（既定は空）。ファイル全体を
+                            コピーするので、メインと worktree の HEAD でそのファイルの内容が
+                            同じときだけ行い、違えば警告して飛ばす
     SETUP_COMMANDS=(...)    新規作成時に worktree 内で実行するコマンド（例: "bundle install"）
     mkwt_notes() { ...; }   新規作成時に呼ぶ関数。引数は worktree の絶対パス。出力は標準エラーに出る
+
+  既存の worktree を再利用するときは、ENV_FILES・ENV_TEMPLATE・LINK_PATHS のうち
+  worktree 側に無いものだけを足す。LOCAL_PATCH_FILES・SETUP_COMMANDS・mkwt_notes は動かさない。
 
   MKWT_SKIP_SETUP=1 を渡すと SETUP_COMMANDS を実行せず、案内だけ出す。
 
@@ -151,7 +160,11 @@ if $IS_PR; then
     fi
   fi
 
-  BRANCH="$PR_HEAD"
+  if [ "$PR_CROSS" = true ]; then
+    BRANCH="pr-$PR_NUMBER"
+  else
+    BRANCH="$PR_HEAD"
+  fi
   WT_DIR="$WT_BASE/$(worktree_dir_name "$BRANCH")"
 
   IN_USE="$(worktree_using_branch "$BRANCH")"
@@ -252,6 +265,7 @@ if [ "${#ENV_FILES[@]}" -gt 0 ]; then
   for f in "${ENV_FILES[@]}"; do
     # -e はリンク先を見るため、壊れたリンクが残っていると「無い」と誤判定する。-L も見る
     if [ -f "$MAIN_ROOT/$f" ] && [ ! -e "$WT_DIR/$f" ] && [ ! -L "$WT_DIR/$f" ]; then
+      mkdir -p "$(dirname "$WT_DIR/$f")"
       cp "$MAIN_ROOT/$f" "$WT_DIR/$f"
     fi
   done
@@ -272,13 +286,17 @@ link_into_worktree() {
   ln -s "$src" "$dest"
 }
 
+# glob を効かせるため $p はクォートしない。空白入りのパスが分割されないよう、IFS は改行だけにする
 if [ "${#LINK_PATHS[@]}" -gt 0 ]; then
   shopt -s nullglob
+  OLD_IFS="$IFS"
+  IFS=$'\n'
   for p in "${LINK_PATHS[@]}"; do
     for src in "$MAIN_ROOT"/$p; do
       link_into_worktree "$src"
     done
   done
+  IFS="$OLD_IFS"
   shopt -u nullglob
 fi
 
@@ -290,10 +308,17 @@ differs_from_head() {
 
 # 再利用時に動かさないのは、その worktree で意図して編集した内容を黙って上書きするため
 LOCAL_PATCHED=()
+LOCAL_PATCH_SKIPPED=()
 if $CREATED && [ "${#LOCAL_PATCH_FILES[@]}" -gt 0 ]; then
   for p in "${LOCAL_PATCH_FILES[@]}"; do
     [ -f "$MAIN_ROOT/$p" ] || continue
     differs_from_head "$MAIN_ROOT" "$p" || continue
+    # ファイル全体をコピーするので、ブランチ側がこのファイルを変えていると、その変更を消してしまう
+    if [ "$(git -C "$MAIN_ROOT" rev-parse -q --verify "HEAD:$p" 2>/dev/null)" \
+      != "$(git -C "$WT_DIR" rev-parse -q --verify "HEAD:$p" 2>/dev/null)" ]; then
+      LOCAL_PATCH_SKIPPED+=("$p")
+      continue
+    fi
     mkdir -p "$(dirname "$WT_DIR/$p")"
     cp "$MAIN_ROOT/$p" "$WT_DIR/$p"
     differs_from_head "$WT_DIR" "$p" || continue
@@ -315,11 +340,18 @@ run_in_wt() {
 }
 
 # 再利用時に走らせないのは、その worktree で意図して入れた状態を黙って作り直すため
+SKIP_SETUP_REASON=""
+if [ -n "${MKWT_SKIP_SETUP:-}" ]; then
+  SKIP_SETUP_REASON="MKWT_SKIP_SETUP が設定されている"
+elif $IS_PR && [ "$PR_CROSS" = true ]; then
+  SKIP_SETUP_REASON="フォークの PR で、第三者のコードに対して依存の導入を走らせない"
+fi
+
 SETUP_FAILED=()
 if $CREATED && [ "${#SETUP_COMMANDS[@]}" -gt 0 ]; then
-  if [ -n "${MKWT_SKIP_SETUP:-}" ]; then
+  if [ -n "$SKIP_SETUP_REASON" ]; then
     log ""
-    log "MKWT_SKIP_SETUP が設定されているため、次を実行していません。worktree 内で実行してください"
+    log "${SKIP_SETUP_REASON}ため、次を実行していません。中身を確かめてから worktree 内で実行してください"
     for c in "${SETUP_COMMANDS[@]}"; do
       log "  $c"
     done
@@ -349,7 +381,15 @@ fi
 
 if $CREATED && declare -F mkwt_notes >/dev/null; then
   log ""
-  mkwt_notes "$WT_DIR" >&2
+  mkwt_notes "$WT_DIR" >&2 || log "警告: mkwt.conf の mkwt_notes が失敗しました"
+fi
+
+if [ "${#LOCAL_PATCH_SKIPPED[@]}" -gt 0 ]; then
+  log ""
+  log "警告: 次のファイルはブランチ側の内容がメインと違うため、ローカル変更を持ち込んでいません"
+  for p in "${LOCAL_PATCH_SKIPPED[@]}"; do
+    log "  $p"
+  done
 fi
 
 if [ "${#LOCAL_PATCHED[@]}" -gt 0 ]; then
