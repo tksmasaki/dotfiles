@@ -11,7 +11,7 @@ if [ -z "$mode" ] || [ "$mode" = "default" ]; then
 fi
 
 if ! printf '%s' "$input" | jq -r '.prompt // ""' |
-  grep -qiE 'md|markdown|マークダウン|ファイル|保存|まとめ|出力'; then
+  grep -qiE '(^|[^a-z0-9_./-])md([^a-z0-9_]|$)|markdown|マークダウン|ファイルに|書き出|保存して'; then
   exit 0
 fi
 
