@@ -24,7 +24,7 @@ disable-model-invocation: true
 | 入力 | 材料の集め方 |
 | --- | --- |
 | ブランチ名（`type/...` 形式） | 命名済み。手順 2 を飛ばす |
-| PR 番号 / PR URL | `git mkwt {PR番号}` に渡すだけでよい。命名も分岐元の判断も要らないので手順 4 へ |
+| PR 番号 / PR URL | 命名も分岐元の判断も要らない。手順 5 の PR の場合へ進む |
 | issue 番号 / issue URL | `gh issue view {n} --json number,title,state,labels,url,body` |
 | 作業内容の説明 | その記述をそのまま材料にする |
 | 指定なし | 直近の会話でこれから着手しようとしている作業を材料にする |
@@ -69,7 +69,7 @@ git ls-remote --exit-code --heads origin "${BASE}"
 
 ### 4. 衝突を確かめる
 
-同名ブランチが既にあると `git mkwt` は中断する。先に確かめて、状況をユーザーに伝えてから進める。
+新規ブランチのときだけ行う。同名ブランチが既にあると `git mkwt` は中断する。先に確かめて、状況をユーザーに伝えてから進める。
 
 ```bash
 git show-ref --verify --quiet "refs/heads/${BRANCH}" && echo "ローカルに既存"
@@ -81,9 +81,19 @@ git worktree list
 
 ### 5. worktree を作る
 
+新規ブランチのとき:
+
 ```bash
 git mkwt "${BRANCH}" "${BASE}"
 ```
+
+PR のとき。ブランチ名ではなく PR 番号を渡す。ブランチ名で渡すと、`git mkwt` は新規ブランチとして扱い、PR とは別のブランチを作る。
+
+```bash
+git mkwt <PR番号>
+```
+
+PR では、`git mkwt` が既存の worktree の再利用と衝突の判定を受け持つ。同一リポジトリの PR は head ブランチ名で、フォークの PR は `pr-<番号>` で worktree を作る。フォークの PR では導入コマンドを実行しないので、案内されたコマンドを報告に含める。
 
 標準出力に worktree の絶対パスだけが出る。進捗・警告は標準エラーに出るので、両方を読む。
 
