@@ -158,10 +158,14 @@ issue_api_path() {
   esac
 }
 
-# 戻り値: 0 = since より後に me へのレビュー依頼がある / 1 = 無い / 2 = 取得に失敗。
+# 戻り値: 0 = since と自分の最後のレビューより後に me へのレビュー依頼がある / 1 = 無い / 2 = 取得に失敗。
 # チームへの依頼は、自分が所属するかを確かめずに対象とみなす
 has_review_request_since() {
-  local api_url="$1" me="$2" since="$3" events
+  local api_url="$1" me="$2" since="$3" my_reviews last_review_at events
+  my_reviews=$("${GH}" api --paginate "${api_url#https://api.github.com/}/reviews?per_page=100" \
+    --jq ".[] | select(.user.login == \"${me}\") | .submitted_at // empty") || return 2
+  last_review_at=$(printf '%s\n' "${my_reviews}" | sort | tail -n 1)
+  [[ "${last_review_at}" > "${since}" ]] && since="${last_review_at}"
   events=$("${GH}" api --paginate "$(issue_api_path "${api_url}")/timeline?per_page=100" \
     --jq '.[] | select(.event == "review_requested") | [.created_at, (.requested_reviewer.login // "@team")] | @tsv') ||
     return 2
@@ -286,21 +290,22 @@ main() {
 
   local current
   current=$(printf '%s' "${raw}" |
-    jq 'map({key: ("reason:" + .id), value: {v: (.reason // ""), read: .last_read_at}}) | from_entries') ||
+    jq 'map({key: ("reason:" + .id), value: {v: (.reason // ""), read: .last_read_at, updated: .updated_at}}) | from_entries') ||
     fail "通知 JSON のパースに失敗"
 
   local changed_ids
   changed_ids=$(printf '%s' "${current}" | jq -r --argjson prev "${prev}" \
-    'to_entries | map(select($prev[.key].v != .value.v)) | .[].key | ltrimstr("reason:")') ||
+    'to_entries | map(select(.value.v != "review_requested" and $prev[.key].v != .value.v))
+     | .[].key | ltrimstr("reason:")') ||
     fail "通知の差分計算に失敗"
 
   # 既読にした後で未読に戻ったスレッドは、コミットなど無関係な動きでも戻るため、
-  # 既読より後に再依頼やメンションがあったときだけ通知する
+  # 既読より後にメンションがあったときだけ通知する
   local me="" returned_ids
   returned_ids=$(printf '%s' "${current}" | jq -r --argjson prev "${prev}" \
     'to_entries
-     | map(select(.value.read != null and ($prev[.key] | has("read")?) and $prev[.key].v == .value.v
-                  and $prev[.key].read != .value.read))
+     | map(select(.value.v != "review_requested" and .value.read != null and ($prev[.key] | has("read")?)
+                  and $prev[.key].v == .value.v and $prev[.key].read != .value.read))
      | .[].key | ltrimstr("reason:")') ||
     fail "通知の差分計算に失敗"
   while IFS= read -r id; do
@@ -314,11 +319,7 @@ main() {
     if [ -z "${me}" ]; then
       me=$("${GH}" api user --jq '.login') || fail "gh api user 失敗"
     fi
-    if [ "${reason}" = review_requested ]; then
-      has_review_request_since "${api_url}" "${me}" "${since}"
-    else
-      has_mention_since "${api_url}" "${me}" "${since}" "${reason}"
-    fi
+    has_mention_since "${api_url}" "${me}" "${since}" "${reason}"
     found=$?
     case "${found}" in
       0) changed_ids+=$'\n'"${id}" ;;
@@ -330,6 +331,37 @@ main() {
         ;;
     esac
   done <<<"${returned_ids}"
+
+  # レビュー依頼のスレッドは追加コミットでも未読のまま更新され、Done にした後も
+  # review_requested で戻ってくる。前回見た更新・既読・自分の最後のレビューのどれよりも
+  # 後に依頼があったときだけ通知する
+  local requested_ids
+  requested_ids=$(printf '%s' "${current}" | jq -r --argjson prev "${prev}" \
+    'to_entries
+     | map(select(.value.v == "review_requested" and $prev[.key].updated != .value.updated))
+     | .[] | [(.key | ltrimstr("reason:")), ([$prev[.key].updated, .value.read] | map(select(. != null)) | max // "")]
+     | @tsv') ||
+    fail "通知の差分計算に失敗"
+  while IFS=$'\t' read -r id since; do
+    [ -z "${id}" ] && continue
+    local api_url found
+    api_url=$(printf '%s' "${raw}" | jq -r --arg id "${id}" '.[] | select(.id==$id) | .url // ""')
+    [ -n "${api_url}" ] || continue
+    if [ -z "${me}" ]; then
+      me=$("${GH}" api user --jq '.login') || fail "gh api user 失敗"
+    fi
+    has_review_request_since "${api_url}" "${me}" "${since}"
+    found=$?
+    case "${found}" in
+      0) changed_ids+=$'\n'"${id}" ;;
+      1) ;;
+      *)
+        log "WARN レビュー依頼の確認に失敗したので次回に再試行する: ${api_url}"
+        current=$(printf '%s' "${current}" | jq --arg key "reason:${id}" --argjson prev "${prev}" \
+          '.[$key].updated = $prev[$key].updated') || fail "状態の組み立てに失敗"
+        ;;
+    esac
+  done <<<"${requested_ids}"
 
   # タブは IFS の空白扱いで空欄が詰まるため、一度も読んでいない(null の) last_read_at には "0" を入れる
   local review_notices=""
