@@ -24,7 +24,7 @@ disable-model-invocation: true
 | 入力 | 材料の集め方 |
 | --- | --- |
 | ブランチ名（`type/...` 形式） | 命名済み。手順 2 を飛ばす |
-| PR 番号 / PR URL | 命名も分岐元の判断も要らない。手順 5 の PR の場合へ進む |
+| PR 番号 / PR URL | 命名も分岐元の判断も要らない。手順 4 の PR の場合へ進む |
 | issue 番号 / issue URL | `gh issue view {n} --json number,title,state,labels,url,body` |
 | 作業内容の説明 | その記述をそのまま材料にする |
 | 指定なし | 直近の会話でこれから着手しようとしている作業を材料にする |
@@ -52,7 +52,7 @@ git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/remotes/
 
 ### 3. 分岐元を決める
 
-**必ず第 2 引数で明示的に渡す。** 省略すると `git mkwt` はカレントブランチを起点にするので、既定ブランチから始めたい場合に事故になる。
+**第 2 引数で明示的に渡す。** 省略すると `git mkwt` はカレントブランチを起点にするので、既定ブランチから始めたい場合に事故になる。
 
 上から順に当てはめる。
 
@@ -67,25 +67,15 @@ git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/remotes/
 git ls-remote --exit-code --heads origin "${BASE}"
 ```
 
-### 4. 衝突を確かめる
-
-新規ブランチのときだけ行う。同名ブランチが既にあると `git mkwt` は中断する。先に確かめて、状況をユーザーに伝えてから進める。
-
-```bash
-git show-ref --verify --quiet "refs/heads/${BRANCH}" && echo "ローカルに既存"
-git worktree list
-```
-
-- 既に worktree があるなら、作らずにそのパスを案内して手順 6 へ進む。
-- ブランチだけあって worktree が無いなら、別名にするか既存ブランチを使うかをユーザーに確認する。
-
-### 5. worktree を作る
+### 4. worktree を作る
 
 新規ブランチのとき:
 
 ```bash
 git mkwt "${BRANCH}" "${BASE}"
 ```
+
+同じブランチの worktree が既にあれば、`git mkwt` は作らずにそれを再利用する。同名のブランチがあり、その worktree が無いか別の場所にあれば中断するので、別名にするか既存ブランチを使うかをユーザーに確認する。
 
 PR のとき。ブランチ名ではなく PR 番号を渡す。ブランチ名で渡すと、`git mkwt` は新規ブランチとして扱い、PR とは別のブランチを作る。
 
@@ -95,17 +85,15 @@ git mkwt <PR番号>
 
 PR では、`git mkwt` が既存の worktree の再利用と衝突の判定を受け持つ。同一リポジトリの PR は head ブランチ名で、フォークの PR は `pr-<番号>` で worktree を作る。フォークの PR では導入コマンドを実行しないので、案内されたコマンドを報告に含める。
 
-標準出力に worktree の絶対パスだけが出る。進捗・警告は標準エラーに出るので、両方を読む。
+標準出力に worktree の絶対パスだけが出る。進捗・警告は標準エラーに出るので、両方を読む。リポジトリの設定（`.git/mkwt.conf`）に導入コマンドがあれば新規作成時に実行され、数分かかることがある。導入コマンドが失敗しても worktree の作成は成功扱いになり、失敗は標準エラーの警告にだけ出る。
 
-リポジトリの設定（`.git/mkwt.conf`）に導入コマンドがあれば新規作成時に実行されるので、数分かかることがある。失敗しても worktree の作成自体は成功扱いになるので、警告を必ず確かめる。
-
-### 6. セッションを worktree へ移す
+### 5. セッションを worktree へ移す
 
 `mcp__ccd_directory__change_directory` に worktree の絶対パスを渡す。deferred なら ToolSearch で読み込んでから呼ぶ。作業ディレクトリが移るのはターンの終了時なので、このターンの残りのコマンドは絶対パスで実行する。
 
 ツールが見つからない環境や、ユーザーが移動を承認しなかった場合は、移動せずに `cd {worktree_path}` を案内する。
 
-### 7. 報告する
+### 6. 報告する
 
 - 作成した worktree の絶対パスと、新しく作ったか既存を使ったか
 - ブランチ名と分岐元
