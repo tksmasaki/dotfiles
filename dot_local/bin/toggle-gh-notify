@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# toggle-gh-notify - gh-notify.sh を定期実行する launchd ジョブを止める・再開する
+#
+# off は bootout に加えて disable を書く。plist は ~/Library/LaunchAgents に残るため、
+# disable が無いと次のログインで再び読み込まれる。
+
+set -euo pipefail
+
+LABEL=com.tksmasaki.gh-notify
+PLIST="${HOME}/Library/LaunchAgents/${LABEL}.plist"
+DOMAIN="gui/$(id -u)"
+SERVICE="${DOMAIN}/${LABEL}"
+
+usage() {
+  cat <<'EOF'
+toggle-gh-notify - GitHub 通知のデスクトップ通知 (gh-notify) を切り替える
+
+Usage:
+  toggle-gh-notify           # 現在の状態を見てトグル
+  toggle-gh-notify on        # 再開する（enable / 1 も可）
+  toggle-gh-notify off       # 止める。ログインし直しても止まったまま（disable / 0 も可）
+  toggle-gh-notify status    # 現在の状態を表示するだけ
+  toggle-gh-notify -h        # このヘルプ
+
+止めている間に届いた通知は、on にした直後の実行でまとめて判定される。
+EOF
+}
+
+[ "$#" -le 1 ] || {
+  echo "引数が多すぎます: $*" >&2
+  echo >&2
+  usage >&2
+  exit 2
+}
+
+case "${1-}" in
+  '')            action=toggle ;;
+  on|enable|1)   action=on ;;
+  off|disable|0) action=off ;;
+  status)        action=status ;;
+  -h|--help)     usage; exit 0 ;;
+  *)             echo "不明な引数: $1" >&2; echo >&2; usage >&2; exit 2 ;;
+esac
+
+[ -f "$PLIST" ] || {
+  echo "plist がありません: $PLIST" >&2
+  exit 1
+}
+
+is_loaded() {
+  launchctl print "$SERVICE" >/dev/null 2>&1
+}
+
+state_label() {
+  if is_loaded; then echo '有効'; else echo '停止中'; fi
+}
+
+if [ "$action" = status ]; then
+  echo "gh-notify: $(state_label)"
+  exit 0
+fi
+
+if [ "$action" = toggle ]; then
+  if is_loaded; then action=off; else action=on; fi
+fi
+
+before="$(state_label)"
+
+if [ "$action" = off ]; then
+  launchctl disable "$SERVICE"
+  if is_loaded; then
+    launchctl bootout "$SERVICE"
+  fi
+else
+  launchctl enable "$SERVICE"
+  if ! is_loaded; then
+    launchctl bootstrap "$DOMAIN" "$PLIST"
+  fi
+fi
+
+echo "gh-notify: ${before} -> $(state_label)"

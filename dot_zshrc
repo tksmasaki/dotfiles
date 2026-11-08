@@ -119,6 +119,8 @@ ab val='vim ~/.config/alacritty/alacritty.toml'
 ab hrs='herdr workspace create --cwd ~/src --label "src"'
 ab hrd='herdr workspace create --cwd ~/.local/share/chezmoi --label "dotfiles"'
 ab hr='herdr'
+# gh-notify
+ab tghn='toggle-gh-notify'
 # ============================== End aliases
 
 #	============================== repository manager
