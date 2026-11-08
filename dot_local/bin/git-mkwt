@@ -1,0 +1,371 @@
+#!/usr/bin/env bash
+# git-mkwt - 隔離された git worktree を作り、git 管理外の個人ファイルを引き継ぐ
+#
+# PATH 上に git-mkwt があるため `git mkwt <引数>` として呼べる。
+# 標準出力には worktree の絶対パスだけを出す（cd との合成用）。進捗・警告は標準エラーに出す。
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+git-mkwt - 隔離された git worktree を作り、git 管理外の個人ファイルを引き継ぐ
+
+Usage:
+  git mkwt <PR番号 | GitHub PR URL | 新規ブランチ名> [起点]
+  git mkwt -h                      # `git mkwt --help` は git が man を引いてしまうので -h を使う
+
+引数:
+  PR番号 / GitHub PR URL   その PR の HEAD を反映した worktree を作る
+                           ブランチは PR の head ブランチ名をそのまま使う
+                           （同一リポジトリの PR なら origin/{head} を追跡するので
+                             そのまま commit して push で PR に返せる）
+  新規ブランチ名           指定起点から新しいブランチを切って worktree を作る
+  起点                     新規ブランチ時のみ有効
+                           省略時   現在のブランチの HEAD（push 前のコミットも含む）
+                           明示時   origin/{起点} を優先し、無ければローカルの {起点}
+
+配置先:
+  ブランチ名の / を - に置き換えた名前にする（feature/add-foo -> feature-add-foo）
+  メイン作業ツリーが <dir>/main か <dir>/*-main なら <dir>/ 配下、それ以外は <repo>.worktrees/ 配下
+
+例:
+  git mkwt 1234                                  # PR #1234
+  git mkwt https://github.com/owner/repo/pull/12 # URL でも可（カレントリポジトリの PR に限る）
+  git mkwt feat/add-foo main                     # main から feat/add-foo
+  cd "$(git mkwt 1234)"                          # 作って移動する
+
+リポジトリごとの設定:
+  <git の共通ディレクトリ>/mkwt.conf（通常は .git/mkwt.conf）があれば bash として source する。
+  .git の中なので、git で追跡されたり他の worktree とずれたりしない。
+
+    LINK_PATHS=(...)        メイン作業ツリーから symlink で引き継ぐパス。glob を書ける
+                            （例: .claude/skills/*）。worktree 側に既にあるものは触らない
+    ENV_TEMPLATE=".env_local"  worktree の .env としてコピーする雛形（既定は空 = 無効）
+    ENV_FILES=(...)         名前を変えずにコピーするファイル（既定は空）
+    LOCAL_PATCH_FILES=(...) 追跡ファイルに当てている手元の変更を新規 worktree にも複製し、
+                            skip-worktree で git status から隠す（既定は空）
+    SETUP_COMMANDS=(...)    新規作成時に worktree 内で実行するコマンド（例: "bundle install"）
+    mkwt_notes() { ...; }   新規作成時に呼ぶ関数。引数は worktree の絶対パス。出力は標準エラーに出る
+
+  MKWT_SKIP_SETUP=1 を渡すと SETUP_COMMANDS を実行せず、案内だけ出す。
+
+  引き継ぐのはブランチの内容に依存しない個人ファイルだけにする。node_modules のような
+  依存の実体を共有すると、依存が異なるブランチ間で壊れる。
+
+後片付け:
+  git worktree remove <path>   # 未コミット変更があると失敗する。捨ててよければ --force
+  git branch -D <branch>       # 不要なら対応ブランチも削除
+EOF
+}
+
+log() { echo "$@" >&2; }
+die() { echo "エラー: $*" >&2; exit 1; }
+
+worktree_using_branch() {
+  git worktree list --porcelain | awk -v want="refs/heads/$1" '
+    /^worktree / { path = substr($0, 10) }
+    /^branch /   { if (substr($0, 8) == want) { print path; exit } }
+  '
+}
+
+is_registered_worktree() {
+  git worktree list --porcelain | grep -qxF "worktree $1"
+}
+
+branch_of_worktree() {
+  git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null || true
+}
+
+worktree_dir_name() {
+  printf '%s' "${1//\//-}"
+}
+
+case "${1:-}" in
+  -h|--help) usage; exit 0 ;;
+  '') usage >&2; exit 1 ;;
+esac
+
+[ "$#" -le 2 ] || { usage >&2; exit 1; }
+
+TARGET="$1"
+START="${2:-}"
+
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+  || die "git リポジトリ内で実行してください"
+
+# カレントが既に別の worktree でも正しくメインルートを求めるため、共通 git ディレクトリから逆算する
+GIT_COMMON_DIR="$(git rev-parse --path-format=absolute --git-common-dir)"
+MAIN_ROOT="$(dirname "$GIT_COMMON_DIR")"
+case "$(basename "$MAIN_ROOT")" in
+  main|*-main) WT_BASE="$(dirname "$MAIN_ROOT")" ;;
+  *)           WT_BASE="${MAIN_ROOT}.worktrees" ;;
+esac
+
+IS_PR=false
+PR_NUMBER=''
+PR_REPO_SLUG=''
+
+if [[ "$TARGET" =~ ^[0-9]+$ ]]; then
+  IS_PR=true
+  PR_NUMBER="$TARGET"
+elif [[ "$TARGET" =~ ^https://github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
+  IS_PR=true
+  PR_REPO_SLUG="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  PR_NUMBER="${BASH_REMATCH[3]}"
+fi
+
+# bash 3.2 では空配列と set -u の相性が悪いため、--repo の有無を関数で分岐する
+gh_pr_view() {
+  if [ -n "$PR_REPO_SLUG" ]; then
+    gh pr view "$PR_NUMBER" --repo "$PR_REPO_SLUG" "$@"
+  else
+    gh pr view "$PR_NUMBER" "$@"
+  fi
+}
+
+if $IS_PR; then
+  if [ "$#" -eq 2 ]; then
+    log "警告: 第2引数 '$2' は新規ブランチ時のみ有効です。PR 指定では無視します"
+  fi
+
+  command -v gh >/dev/null 2>&1 || die "gh コマンドが必要です"
+
+  # stderr は取り込まない。gh はリリース通知などを stderr に出すことがあり、
+  # 2>&1 にすると成功時にその 1 行目を TSV として解析してしまうため
+  PR_TSV="$(gh_pr_view \
+    --json state,title,headRefName,baseRefName,isCrossRepository \
+    -q '[.state, .title, .headRefName, .baseRefName, .isCrossRepository] | @tsv')" \
+    || die "PR #$PR_NUMBER を取得できません"
+
+  IFS=$'\t' read -r PR_STATE PR_TITLE PR_HEAD PR_BASE PR_CROSS <<<"$PR_TSV"
+  [ -n "$PR_HEAD" ] || die "PR #$PR_NUMBER の head ブランチ名を取得できませんでした"
+
+  [ "$PR_STATE" = OPEN ] || log "警告: PR #$PR_NUMBER は $PR_STATE 状態です"
+
+  # worktree はカレントリポジトリからしか生やせない。URL で他リポジトリを指されたら
+  # origin から別 PR を引いてしまうため、ここで弾く
+  if [ -n "$PR_REPO_SLUG" ]; then
+    CUR_SLUG="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)"
+    if [ -n "$CUR_SLUG" ] && [ "$CUR_SLUG" != "$PR_REPO_SLUG" ]; then
+      die "URL は $PR_REPO_SLUG の PR ですが、カレントは $CUR_SLUG です。対象リポジトリで実行してください"
+    fi
+  fi
+
+  BRANCH="$PR_HEAD"
+  WT_DIR="$WT_BASE/$(worktree_dir_name "$BRANCH")"
+
+  IN_USE="$(worktree_using_branch "$BRANCH")"
+  if [ -n "$IN_USE" ] && [ "$IN_USE" != "$WT_DIR" ]; then
+    die "ブランチ $BRANCH は既に $IN_USE でチェックアウトされています。そちらで作業してください"
+  fi
+
+else
+  BRANCH="$TARGET"
+  WT_DIR="$WT_BASE/$(worktree_dir_name "$BRANCH")"
+fi
+
+# 配置先の名前は対象から機械的に決まるため、別ブランチでも同名になることがある
+# （feat/a/b と feat/a-b はどちらも feat-a-b）。取り違えを防ぐため、
+# 登録済みの worktree であることと、載っているブランチが一致することを確かめる
+if [ -e "$WT_DIR" ]; then
+  if ! is_registered_worktree "$WT_DIR"; then
+    die "$WT_DIR は worktree として登録されていません。別のものが置かれている可能性があるため中断します"
+  fi
+
+  CURRENT_BRANCH="$(branch_of_worktree "$WT_DIR")"
+  if [ "$CURRENT_BRANCH" != "$BRANCH" ]; then
+    die "$WT_DIR は ${CURRENT_BRANCH:-detached HEAD} の作業ツリーで、$BRANCH とは別物です。別名を指定するか、不要なら git worktree remove \"$WT_DIR\" してください"
+  fi
+
+  CREATED=false
+  log "既存の worktree を再利用します: $WT_DIR"
+else
+  CREATED=true
+  mkdir -p "$WT_BASE"
+
+  # 無条件の prune は一時的に見えない他 worktree の登録も消すので、登録だけが残っているときに限る
+  if is_registered_worktree "$WT_DIR"; then
+    git worktree prune >&2
+  fi
+
+  if $IS_PR; then
+    if [ "$PR_CROSS" != true ] \
+      && git fetch origin "$PR_HEAD" >/dev/null 2>&1 \
+      && git show-ref --verify --quiet "refs/remotes/origin/$PR_HEAD"; then
+      START_POINT="origin/$PR_HEAD"
+    else
+      # フォーク由来や head ブランチ削除済みでも、pull/{n}/head なら base リポジトリ側から取得できる
+      git fetch origin "pull/$PR_NUMBER/head" >&2
+      START_POINT=FETCH_HEAD
+      [ "$PR_CROSS" = true ] && log "情報: フォークからの PR のため upstream は設定しません"
+    fi
+
+    if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+      log "警告: 既存のローカルブランチ $BRANCH を使います（PR の最新 HEAD とズレている可能性があります）"
+      git worktree add "$WT_DIR" "$BRANCH" >&2
+    else
+      git worktree add "$WT_DIR" -b "$BRANCH" "$START_POINT" >&2
+    fi
+  else
+    if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+      die "ブランチ $BRANCH は既に存在します。別のブランチ名を指定してください"
+    fi
+
+    if [ -n "$START" ]; then
+      git fetch origin "$START" >/dev/null 2>&1 || true
+      if git show-ref --verify --quiet "refs/remotes/origin/$START"; then
+        BASE_REF="origin/$START"
+      elif git show-ref --verify --quiet "refs/heads/$START"; then
+        BASE_REF="$START"
+      else
+        die "起点 '$START' が見つかりません"
+      fi
+    else
+      # 作業中の続きから分岐する用途なので、push 前のコミットも引き継ぐためローカルの HEAD を使う
+      BASE_REF="$(git rev-parse HEAD)"
+      CURRENT="$(git symbolic-ref --quiet --short HEAD || true)"
+      log "起点: ${CURRENT:-detached HEAD} ($(git rev-parse --short HEAD))"
+      if [ -n "$(git status --porcelain)" ]; then
+        log "  注意: 未コミットの変更は引き継がれません"
+      fi
+    fi
+
+    # --no-track が無いと、新ブランチの upstream が起点に設定され、
+    # 引数無しの push が起点ブランチ（他人の PR など）に飛ぶ
+    git worktree add --no-track "$WT_DIR" -b "$BRANCH" "$BASE_REF" >&2
+  fi
+fi
+
+LINK_PATHS=(.claude/settings.local.json CLAUDE.local.md)
+ENV_TEMPLATE=""
+ENV_FILES=()
+LOCAL_PATCH_FILES=()
+SETUP_COMMANDS=()
+
+CONF="$GIT_COMMON_DIR/mkwt.conf"
+if [ -f "$CONF" ]; then
+  # shellcheck disable=SC1090
+  source "$CONF"
+fi
+
+if [ "${#ENV_FILES[@]}" -gt 0 ]; then
+  for f in "${ENV_FILES[@]}"; do
+    # -e はリンク先を見るため、壊れたリンクが残っていると「無い」と誤判定する。-L も見る
+    if [ -f "$MAIN_ROOT/$f" ] && [ ! -e "$WT_DIR/$f" ] && [ ! -L "$WT_DIR/$f" ]; then
+      cp "$MAIN_ROOT/$f" "$WT_DIR/$f"
+    fi
+  done
+fi
+
+ENV_FROM_TEMPLATE=false
+if [ -n "$ENV_TEMPLATE" ] && [ -f "$MAIN_ROOT/$ENV_TEMPLATE" ] \
+  && [ ! -e "$WT_DIR/.env" ] && [ ! -L "$WT_DIR/.env" ]; then
+  cp "$MAIN_ROOT/$ENV_TEMPLATE" "$WT_DIR/.env"
+  ENV_FROM_TEMPLATE=true
+fi
+
+link_into_worktree() {
+  local src="$1" dest="$WT_DIR/${1#"$MAIN_ROOT"/}"
+  [ -e "$src" ] || return 0
+  [ -e "$dest" ] || [ -L "$dest" ] && return 0
+  mkdir -p "$(dirname "$dest")"
+  ln -s "$src" "$dest"
+}
+
+if [ "${#LINK_PATHS[@]}" -gt 0 ]; then
+  shopt -s nullglob
+  for p in "${LINK_PATHS[@]}"; do
+    for src in "$MAIN_ROOT"/$p; do
+      link_into_worktree "$src"
+    done
+  done
+  shopt -u nullglob
+fi
+
+# skip-worktree が付いていると git diff は差分を報告しないので、HEAD の内容と直接比べる
+differs_from_head() {
+  git -C "$1" cat-file -e "HEAD:$2" 2>/dev/null || return 1
+  ! git -C "$1" show "HEAD:$2" 2>/dev/null | cmp -s - "$1/$2"
+}
+
+# 再利用時に動かさないのは、その worktree で意図して編集した内容を黙って上書きするため
+LOCAL_PATCHED=()
+if $CREATED && [ "${#LOCAL_PATCH_FILES[@]}" -gt 0 ]; then
+  for p in "${LOCAL_PATCH_FILES[@]}"; do
+    [ -f "$MAIN_ROOT/$p" ] || continue
+    differs_from_head "$MAIN_ROOT" "$p" || continue
+    mkdir -p "$(dirname "$WT_DIR/$p")"
+    cp "$MAIN_ROOT/$p" "$WT_DIR/$p"
+    differs_from_head "$WT_DIR" "$p" || continue
+    git -C "$WT_DIR" update-index --skip-worktree -- "$p"
+    LOCAL_PATCHED+=("$p")
+  done
+fi
+
+MISE="$(command -v mise 2>/dev/null || true)"
+
+# mise activate されていない非対話シェルから呼ばれると、システムの言語処理系を掴んで失敗する。
+# mise exec ではなく PATH を通すのは、shebang の env のように孫プロセスが PATH から引くものまで揃えるため
+run_in_wt() {
+  if [ -n "$MISE" ]; then
+    (cd "$WT_DIR" && PATH="$("$MISE" bin-paths 2>/dev/null | tr '\n' ':')$PATH" bash -c "$1") >&2
+  else
+    (cd "$WT_DIR" && bash -c "$1") >&2
+  fi
+}
+
+# 再利用時に走らせないのは、その worktree で意図して入れた状態を黙って作り直すため
+SETUP_FAILED=()
+if $CREATED && [ "${#SETUP_COMMANDS[@]}" -gt 0 ]; then
+  if [ -n "${MKWT_SKIP_SETUP:-}" ]; then
+    log ""
+    log "MKWT_SKIP_SETUP が設定されているため、次を実行していません。worktree 内で実行してください"
+    for c in "${SETUP_COMMANDS[@]}"; do
+      log "  $c"
+    done
+  else
+    for c in "${SETUP_COMMANDS[@]}"; do
+      log ""
+      log "$c を実行します"
+      run_in_wt "$c" || SETUP_FAILED+=("$c")
+    done
+  fi
+fi
+
+if $IS_PR; then
+  log "PR #$PR_NUMBER [$PR_STATE] $PR_TITLE"
+  log "  $PR_HEAD -> $PR_BASE"
+fi
+log "worktree: $WT_DIR"
+log "branch:   $BRANCH"
+
+if [ "${#SETUP_FAILED[@]}" -gt 0 ]; then
+  log ""
+  log "警告: 次のコマンドに失敗しました。worktree 内でやり直してください"
+  for c in "${SETUP_FAILED[@]}"; do
+    log "  $c"
+  done
+fi
+
+if $CREATED && declare -F mkwt_notes >/dev/null; then
+  log ""
+  mkwt_notes "$WT_DIR" >&2
+fi
+
+if [ "${#LOCAL_PATCHED[@]}" -gt 0 ]; then
+  log ""
+  log "メイン作業ツリーのローカル変更を複製し、skip-worktree で git status から隠しました"
+  for p in "${LOCAL_PATCHED[@]}"; do
+    log "  $p"
+  done
+  log "解除: git update-index --no-skip-worktree <path>"
+  log "分岐元がこのファイルを更新すると checkout / merge が止まります。その場合は先に解除してください"
+fi
+
+# .env の配置は既存 worktree の再利用時にも起こる。接続先が変わりうるので $CREATED では隠さない
+if $ENV_FROM_TEMPLATE; then
+  log ""
+  log ".env を $ENV_TEMPLATE から配置しました（DB などの接続先が変わる可能性があります）"
+fi
+
+echo "$WT_DIR"
