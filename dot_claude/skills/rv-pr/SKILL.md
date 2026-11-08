@@ -28,7 +28,8 @@ PR の対象リポジトリの作業ツリー内で実行する。`gh` の対象
 ### 1. PR を確かめる
 
 ```bash
-gh pr view <PR> --json number,url,title,author,state,headRefOid
+gh pr view <PR> --json number,url,title,author,state,headRefOid,isCrossRepository
+gh pr diff <PR> --name-only
 gh api user --jq .login
 ```
 
@@ -37,13 +38,20 @@ gh api user --jq .login
 - PR が無い、または `state` が `MERGED` か `CLOSED`。
 - 作成者が自分。自分の PR は `/pr-fullcheck`（`-r` なし）で確かめるよう案内する。
 
+次の場合は、PR の作者が書いた設定・hook・指示がこのセッションで動く。手順 2 に進む前に該当するファイルを示し、続けてよいかユーザーに確認する。承認が得られなければ終了する。
+
+- `isCrossRepository` が true（フォークの PR）。
+- 変更ファイルに `.claude/`、`CLAUDE.md`、`CLAUDE.local.md`、`AGENTS.md`、`.mcp.json`、`.husky/`、`.githooks/` のいずれかが含まれる。
+
 ### 2. worktree を用意する
 
 ```bash
 git mkwt <PR 番号>
 ```
 
-その PR の worktree が既にあれば再利用し、無ければ作る。標準出力に worktree の絶対パスが出る。標準エラーには、再利用したか、導入コマンドの失敗、フォークの PR で実行しなかった導入コマンドなどが出るので、最後の報告に含める。
+その PR の worktree が既にあれば再利用し、無ければ作る。標準出力に worktree の絶対パスが出る。
+
+標準エラーには、再利用したかどうか、導入コマンドの失敗、フォークの PR で実行しなかった導入コマンドなどが出る。これらは最後の報告に含める。
 
 続けて、worktree を PR の head に合わせる。再利用した worktree や既存のローカルブランチは、PR より古いことがある。
 
@@ -51,9 +59,11 @@ git mkwt <PR 番号>
 - `git -C <worktree> rev-parse HEAD` が `headRefOid` と違えば、次で合わせる。フォークのブランチは upstream が無いので `pull` は使えない。fast-forward できなければ、状況を伝えて終了する。
 
 ```bash
-git -C <worktree> fetch origin "pull/<番号>/head"
-git -C <worktree> merge --ff-only FETCH_HEAD
+git -C <worktree> -c core.hooksPath=/dev/null fetch origin "pull/<番号>/head"
+git -C <worktree> -c core.hooksPath=/dev/null merge --ff-only FETCH_HEAD
 ```
+
+`core.hooksPath` を相対パスで設定したリポジトリでは、git は worktree の中のフックを使う。PR が同梱したフックを動かさないため、worktree の中で git を実行するときはフックを無効にする。
 
 HEAD が `headRefOid` と一致することを確かめてから次へ進む。
 

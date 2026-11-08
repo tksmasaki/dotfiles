@@ -24,7 +24,7 @@ argument-hint: "[-d]（デフォルトディレクトリに固定する）"
 
 ### ユーザーに確認できないモードの場合（確認なし）
 
-ユーザーに確認を取れない実行モードのとき、確認せず次の順で出力先を決める。Claude Code では、注入されたコンテキストの `permission_mode` が `auto` / `bypassPermissions` / `dontAsk` のとき。他のエージェントでは、その環境の承認設定から判断する。
+ユーザーに確認を取れない実行モードのとき、確認せず次の順で出力先を決める。Claude Code では、注入されたコンテキストの `permission_mode` が `auto` / `bypassPermissions` / `dontAsk` のとき。他のエージェントでは、その環境の承認設定から判断し、判断がつかなければ通常モードとして扱う。
 
 1. セッション中に出力先が指定済みなら、それを使う。
 2. git ブランチ名が `<prefix>/<branch-name>` 形式（例: `feature/123-add-new-feature`）なら、prefix（最初の `/` まで）を除いたブランチ名で `<デフォルト>/<branch-name>/` に出力する。
