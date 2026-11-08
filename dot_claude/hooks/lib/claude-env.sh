@@ -20,7 +20,7 @@
 #
 # 使い方:
 #   . ~/.claude/hooks/lib/claude-env.sh
-#   val="$(claude_env_current CLAUDE_AUTO_COMMIT "$cwd")" || val="${CLAUDE_AUTO_COMMIT-}"
+#   val="$(claude_env_current AGENT_AUTO_COMMIT "$cwd")" || val="${AGENT_AUTO_COMMIT-}"
 #
 # 戻り値: 0 = 解決できた（未設定なら空文字を出力） / 1 = 設定ファイルを読めない
 #         （JSON が不正など）。呼び出し側で環境変数へ委ねるなどの判断をする。

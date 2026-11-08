@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# toggle-auto-commit - Claude Code の自動コミット（CLAUDE_AUTO_COMMIT）を切り替える
+# toggle-auto-commit - エージェント（Claude Code・Codex）の自動コミット（AGENT_AUTO_COMMIT）を切り替える
 #
-# "1" が設定されていると、Claude Code が git commit を作業の一環として自発的に
+# "1" が設定されていると、エージェントが git commit を作業の一環として自発的に
 # 実行してよくなる（提案・確認を省略）。
 #
 # 状態は worktree ごとに分ける。書き込み先は git ディレクトリ直下の claude-env.json
@@ -19,12 +19,12 @@
 
 set -euo pipefail
 
-KEY=CLAUDE_AUTO_COMMIT
+KEY=AGENT_AUTO_COMMIT
 STATE_BASENAME=claude-env.json
 
 usage() {
   cat <<'EOF'
-toggle-auto-commit - Claude Code の自動コミット（CLAUDE_AUTO_COMMIT）を切り替える
+toggle-auto-commit - エージェント（Claude Code・Codex）の自動コミット（AGENT_AUTO_COMMIT）を切り替える
 
 Usage:
   toggle-auto-commit           # 現在の状態を見てトグル

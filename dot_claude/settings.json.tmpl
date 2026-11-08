@@ -6,7 +6,7 @@
     "CLAUDE_CODE_THRIFTY_SONIC": "false",
     "CLAUDE_CODE_SUBAGENT_MODEL": "opus",
     "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1",
-    "CLAUDE_AUTO_COMMIT": "1"
+    "AGENT_AUTO_COMMIT": "1"
 {{- $envPath := joinPath .chezmoi.homeDir ".config/claude/env.json" }}
 {{- if stat $envPath }}
 {{- range $k, $v := include $envPath | fromJson }},
@@ -53,7 +53,8 @@
       "Bash(docker inspect *)",
       "Bash(terraform plan *)",
       "Bash(terraform show *)",
-      "Bash(terraform validate *)"
+      "Bash(terraform validate *)",
+      "mcp__ccd_directory__change_directory"
     ],
     "defaultMode": "auto"
   },

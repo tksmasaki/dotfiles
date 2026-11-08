@@ -9,3 +9,6 @@ jq = "latest"
 node = "latest"
 starship = "latest"
 zoxide = "latest"
+
+[settings.github]
+credential_command = 'gh auth token --hostname "$MISE_CREDENTIAL_HOST"'

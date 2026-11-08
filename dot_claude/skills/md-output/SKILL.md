@@ -10,25 +10,29 @@ argument-hint: "[-d]（デフォルトディレクトリに固定する）"
 
 ### デフォルト出力先
 
-デフォルト出力先は環境変数 `MD_OUTPUT_DIR` の値。`echo "$MD_OUTPUT_DIR"` で読み、空なら `~/Documents/` を使う。以下で「デフォルト」と書いたらこのディレクトリを指す。
+デフォルト出力先は次の順で最初に見つかった値。以下で「デフォルト」と書いたらこのディレクトリを指す。
 
-`MD_OUTPUT_DIR` はマシンごとに `~/.config/claude/env.json` に置く（`{"MD_OUTPUT_DIR": "/abs/path"}`）。この値は `~/.claude/settings.json` の `env` に取り込まれる。
+1. 環境変数 `MD_OUTPUT_DIR`（`echo "$MD_OUTPUT_DIR"`）
+2. `~/.config/claude/env.json` の `MD_OUTPUT_DIR`（`jq -r '.MD_OUTPUT_DIR // empty' ~/.config/claude/env.json`）
+3. `~/Documents/`
+
+`MD_OUTPUT_DIR` はマシンごとに `~/.config/claude/env.json` に置く（`{"MD_OUTPUT_DIR": "/abs/path"}`）。Claude Code はこの値を `~/.claude/settings.json` の `env` から環境変数として受け取る。他のエージェントでは環境変数が空になるので、2 でファイルから読む。
 
 ### `-d` が指定された場合（最優先）
 
 スキルの引数やユーザーの指示に `-d` が含まれるときは、モードやブランチ名にかかわらずデフォルトに出力する。セッション中に別の出力先を記憶していても、その回はデフォルトを使う（記憶しているデフォルト出力先は更新しない）。
 
-### auto mode の場合（確認なし）
+### ユーザーに確認できないモードの場合（確認なし）
 
-注入されたコンテキストの `permission_mode` が `auto` / `bypassPermissions` / `dontAsk`（＝ユーザーに確認を取れないモード）のとき、確認せず次の順で出力先を決める。
+ユーザーに確認を取れない実行モードのとき、確認せず次の順で出力先を決める。Claude Code では、注入されたコンテキストの `permission_mode` が `auto` / `bypassPermissions` / `dontAsk` のとき。他のエージェントでは、その環境の承認設定から判断し、判断がつかなければ通常モードとして扱う。
 
 1. セッション中に出力先が指定済みなら、それを使う。
 2. git ブランチ名が `<prefix>/<branch-name>` 形式（例: `feature/123-add-new-feature`）なら、prefix（最初の `/` まで）を除いたブランチ名で `<デフォルト>/<branch-name>/` に出力する。
 3. それ以外（`main` や `/` を含まないブランチを含む）はデフォルトに出力する。
 
-### 通常モードの場合（上記以外。permission_mode が default / acceptEdits / plan、または未注入のとき）
+### 通常モードの場合（上記以外。Claude Code では permission_mode が default / acceptEdits / plan、または未注入のとき）
 
-- セッション初回の md 出力時は、出力先をユーザーに選択させる（`AskUserQuestion` ツールを使う）:
+- セッション初回の md 出力時は、出力先をユーザーに選択させる（使える質問の道具を使う。Claude Code では `AskUserQuestion`）:
   - `default` - デフォルト（選択肢には解決した絶対パスを表示する）
   - ブランチ名フォルダ - git ブランチが `<prefix>/<branch-name>` 形式なら `<デフォルト>/<branch-name>/`（該当しない場合はこの選択肢を出さない）
   - 直接入力

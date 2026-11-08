@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# auto-commit-state.sh - CLAUDE_AUTO_COMMIT の現在値をセッション途中でも伝える
+# auto-commit-state.sh - AGENT_AUTO_COMMIT の現在値をセッション途中でも伝える
 #
 # toggle-auto-commit の書き込み先は worktree ごとの claude-env.json で、Claude Code の
 # settings ではないため環境変数には載らない。settings.local.json に置いた場合も、env が
@@ -8,7 +8,7 @@
 # additionalContext で正しい状態を注入する。このフックを外すと、Claude 側からは
 # claude-env.json の値が見えなくなる。
 #
-# CLAUDE_AUTO_COMMIT は「Claude が自発的に commit してよいか」という判断材料
+# AGENT_AUTO_COMMIT は「Claude が自発的に commit してよいか」という判断材料
 # なので、フックで強制するのではなく Claude に現在値を伝える形をとる。
 # （CLAUDE_SKIP_REMOTE_CONFIRM のようにフック自身が使う値は、
 #   confirm-remote-commands.sh 側で直接読み直している）
@@ -19,7 +19,7 @@
 
 set -uo pipefail
 
-KEY=CLAUDE_AUTO_COMMIT
+KEY=AGENT_AUTO_COMMIT
 
 # shellcheck source=lib/claude-env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/claude-env.sh" || exit 0
@@ -32,7 +32,7 @@ cwd="$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)" || exit 0
 [ -n "$cwd" ] || exit 0
 
 file_val="$(claude_env_current "$KEY" "$cwd")" || exit 0
-env_val="${CLAUDE_AUTO_COMMIT-}"
+env_val="${AGENT_AUTO_COMMIT-}"
 
 # 有効/無効が一致していれば、セッション開始時の値がそのまま正しい。
 # 値そのものではなく意味で比べる（"0" と未設定はどちらも無効なので注入しない）
