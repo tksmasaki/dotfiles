@@ -62,7 +62,7 @@ npx markdownlint-cli2 --config dot_markdownlint.jsonc <file>  # ソースでは�
 
 `dot_claude/hooks/*.sh` は symlink 経由で実行され、実行ビットはソース側のファイルモードで決まる。`executable_` プレフィックスは使っていない。
 
-hook は `dot_claude/hooks/lib/claude-env.sh` を `source` し、`CLAUDE_AUTO_COMMIT` などの現在値を settings ではなくファイルから読み直す。最優先はリポジトリの git ディレクトリ直下の `claude-env.json`（worktree ごとの上書き）。この値を書き換える `toggle-auto-commit` / `toggle-remote-confirm` は `dot_local/bin/` で管理している。
+hook は `dot_claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUTO_COMMIT` などの現在値を settings ではなくファイルから読み直す。最優先はリポジトリの git ディレクトリ直下の `claude-env.json`（worktree ごとの上書き）。この値を書き換える `toggle-auto-commit` / `toggle-remote-confirm` は `dot_local/bin/` で管理している。
 
 `dot_local/bin/` は `~/.local/bin/` に symlink される自作コマンドの置き場。mise が置く shim と同居するため `exact_` は使わない。
 
