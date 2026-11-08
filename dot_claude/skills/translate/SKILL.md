@@ -14,8 +14,8 @@ Read the leading flags in `$ARGUMENTS`, in any order. `-j` or `-e` sets the targ
 When the source is a single URL and nothing else, translate the article body of that page. Get the page's own content, never a summary of it. Do not use WebFetch: it returns a model's answer about the page, not the page.
 
 1. Fetch the raw HTML with `curl -sL`. Use it when the article body is in the HTML.
-2. If curl fails, or the body is not in the HTML (rendered by JavaScript, a login wall, a bot check), open the URL in Chrome with the claude-in-chrome tools and read the rendered page. Do not read cookies or web storage.
-3. If Chrome cannot show the body either, stop. Tell the user which methods failed and why, and do not translate from memory or from a partial page.
+2. If curl fails, or the body is not in the HTML (rendered by JavaScript, a login wall, a bot check), open the URL with a browser tool available in this environment (in Claude Code, the claude-in-chrome tools) and read the rendered page. Do not read cookies or web storage.
+3. If no browser tool is available, or the browser cannot show the body either, stop. Tell the user which methods failed and why, and do not translate from memory or from a partial page.
 
 Translate the body only. Leave out site navigation, sidebars, comments, and share buttons. Keep the article's links, images, headings, quotations, and tables, and carry their URLs into the translation as Markdown links, resolving relative URLs against the page URL. State the page URL, and the author and date when the page gives them, at the top of the translation.
 
