@@ -85,6 +85,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*__(add_comment_to_pending_review|pull_request_review_write)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/allow-pending-review.sh",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionStart": [
