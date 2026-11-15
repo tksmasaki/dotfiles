@@ -53,6 +53,8 @@ The structure of the target language sometimes forces a choice. Resolve it as be
 
 Do not wrap the output in a code block. Write [Notes] in Japanese. Omit [Notes] if there are no significant translation decisions.
 
+The global writing rules (content, Japanese style, notation) do not apply to [Translation]: keep the source's style, symbols, and structure. They do apply to [Notes].
+
 ## Markdown output
 
 With `--md`, write the translation to a file instead of the chat. Load the `md-output` skill and follow it for the output directory, the file name, and the chat reply after writing.
