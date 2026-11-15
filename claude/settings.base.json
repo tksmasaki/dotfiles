@@ -50,6 +50,9 @@
       "Bash(terraform validate *)",
       "mcp__ccd_directory__change_directory"
     ],
+    "deny": [
+      "Read(**/.env)"
+    ],
     "defaultMode": "auto"
   },
   "model": "opus[1m]",
@@ -134,7 +137,8 @@
     "pyright-lsp@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "hookify@claude-plugins-official": false,
-    "frontend-design@claude-plugins-official": false
+    "frontend-design@claude-plugins-official": false,
+    "1password@1password": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -147,6 +151,12 @@
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-community"
+      }
+    },
+    "1password": {
+      "source": {
+        "source": "github",
+        "repo": "1Password/1password-claude-plugin"
       }
     }
   },
