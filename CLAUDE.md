@@ -65,4 +65,4 @@ hook は `home/dot-claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUT
 
 - macOS: リポジトリを複製して `install.sh` を実行する。Homebrew・Brewfile の導入、dotfiles の適用、mise の処理系の導入までを行う。
 - Claude のクラウド環境: `cloud-setup-claude.sh` の中身を環境のセットアップスクリプトに貼る。`mise.toml` の分だけを適用し、`settings.json` や hook はクラウド環境の設定のまま残す。リポジトリの複製より前に動くので、mise のバイナリを GitHub Releases から直接取る。版は手動で更新する。
-- Codex のクラウド環境: `cloud-setup-codex.sh` の中身を環境のセットアップスクリプトに貼る。初回セットアップ専用で、mise が無ければ GitHub Releases から導入し、dotfiles を clone する。`mise.toml` と `mise.mac.toml` を読み、`~/.codex/AGENTS.md` と共有 skill の `~/.agents/skills/<名前>` だけを `--force` で適用する。同名の既存設定は置き換え、管理外の skill は残す。Codex 実行時と同じ `$HOME` を使い、`CODEX_HOME` は既定のままにする。
+- Codex のクラウド環境: `cloud-setup-codex.sh` の中身を環境のセットアップスクリプトに貼る。mise が無ければ GitHub Releases から取得し、公式の `SHASUMS256.txt` で検証してから導入する。dotfiles は初回だけ clone し、既存 checkout があれば更新せずに使う。検証済みコミットへの固定は環境側で行う。`mise.toml` と `mise.mac.toml` を読み、`~/.codex/AGENTS.md` と共有 skill の `~/.agents/skills/<名前>` だけを `--force` で適用する。同名の既存設定は置き換え、管理外の skill は残す。Codex 実行時と同じ `$HOME` を使い、`CODEX_HOME` は既定のままにする。
