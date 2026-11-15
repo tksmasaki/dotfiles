@@ -5,6 +5,7 @@ brew "starship"
 brew "zoxide"
 brew "fzf"
 brew "herdr"
+brew "terminal-notifier"
 
 # 開発ツール
 brew "gh"
@@ -22,3 +23,4 @@ brew "docker"
 brew "docker-compose"
 
 cask "font-hackgen-nerd"
+cask "codex"

@@ -14,7 +14,6 @@ dotfiles_dir = "{{config_root}}"
 "~/.claude/skills/settings-review" = { source = "home/dot-claude/skills/settings-review", mode = "symlink-each" }
 "~/.local/bin" = { source = "home/dot-local/bin", mode = "symlink-each" }
 "~/.config/alacritty" = { source = "home/dot-config/alacritty", mode = "symlink-each" }
-"~/.config/ghostty" = { source = "home/dot-config/ghostty", mode = "symlink-each" }
 "~/.config/git" = { source = "home/dot-config/git", mode = "symlink-each", dot_prefix = true }
 "~/.config/herdr" = { source = "home/dot-config/herdr", mode = "symlink-each" }
 "~/.config/mise" = { source = "home/dot-config/mise", mode = "symlink-each" }
