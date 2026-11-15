@@ -11,7 +11,7 @@
 ## 配置
 
 - `home/` は `$HOME` と同じ並びで置く。`dot-` で始まる名前が `.` で始まる名前に対応する（`home/dot-config/git/config` は `~/.config/git/config`）。
-- 適用先は 2 つのファイルに分けて書く。`mise.toml` には、Claude のクラウド環境でも要るもの（Claude が読む指示・rules・references と、共有の skill の `~/.claude/skills` 側）だけを置く。それ以外（シェルやアプリの設定、`~/.local/bin`、git の設定、`settings.json` と hook、Codex 用の `~/.agents/skills`）は、Mac だけで使うので `mise.mac.toml` に置く。`mise.mac.toml` は `-E mac`（`MISE_ENV=mac`）を付けたときだけ読まれる。
+- 適用先は 2 つのファイルに分けて書く。`mise.toml` には、Claude のクラウド環境でも要るもの（Claude が読む指示・rules・references と、共有の skill の `~/.claude/skills` 側）だけを置く。それ以外（シェルやアプリの設定、`~/.local/bin`、git の設定、`settings.json` と hook、Codex 用の `~/.agents/skills`）は、Mac で適用するため `mise.mac.toml` に置く。`mise.mac.toml` は `-E mac`（`MISE_ENV=mac`）を付けたときだけ読まれる。
 - 適用先は 1 つずつ書く。ファイルは symlink、ディレクトリは `symlink-each` にする。`symlink-each` は管理外のファイルが同居するディレクトリでも、管理するファイルだけをリンクする。`~` そのものを対象にしない。適用先のディレクトリを走査するので、HOME 全体を読んで止まる。
 - `symlink-each` にしたディレクトリにファイルを足すだけなら、適用先の定義は変えない。それ以外の場所にファイルやディレクトリを足したら、どちらかのファイルに適用先を足す。
 - `claude/` は `~/.claude/settings.json` の生成元。`agents/` は Codex と共有する skill の原本（後述）。
@@ -64,4 +64,5 @@ hook は `home/dot-claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUT
 ## 新しいマシン
 
 - macOS: リポジトリを複製して `install.sh` を実行する。Homebrew・Brewfile の導入、dotfiles の適用、mise の処理系の導入までを行う。
-- Claude のクラウド環境: `cloud-setup.sh` の中身を環境のセットアップスクリプトに貼る。`mise.toml` の分だけを適用し、`settings.json` や hook はクラウド環境の設定のまま残す。リポジトリの複製より前に動くので、mise のバイナリを GitHub Releases から直接取る。版は手動で更新する。
+- Claude のクラウド環境: `cloud-setup-claude.sh` の中身を環境のセットアップスクリプトに貼る。`mise.toml` の分だけを適用し、`settings.json` や hook はクラウド環境の設定のまま残す。リポジトリの複製より前に動くので、mise のバイナリを GitHub Releases から直接取る。版は手動で更新する。
+- Codex のクラウド環境: `cloud-setup-codex.sh` の中身を環境のセットアップスクリプトに貼る。初回セットアップ専用で、mise が無ければ GitHub Releases から導入し、dotfiles を clone する。`mise.toml` と `mise.mac.toml` を読み、`~/.codex/AGENTS.md` と共有 skill の `~/.agents/skills/<名前>` だけを `--force` で適用する。同名の既存設定は置き換え、管理外の skill は残す。Codex 実行時と同じ `$HOME` を使い、`CODEX_HOME` は既定のままにする。
