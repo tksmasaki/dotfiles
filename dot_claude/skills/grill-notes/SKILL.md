@@ -1,21 +1,21 @@
 ---
-name: grill-with-claude-docs
-description: grilling で計画を問い詰めながら、決まった用語と判断を Claude Docs の文書に書き留める。リポジトリにはファイルを書かない。
-argument-hint: "[記録先の Docs の URL]（省略時は新しく作る）"
+name: grill-notes
+description: grilling で計画を問い詰めながら、決まった用語と判断を md ファイルに書き留める。
+argument-hint: "[記録先の md のパス | --vault | --path <ディレクトリ>]（省略時は ./tmp に新しく作る）"
 disable-model-invocation: true
 ---
 
-# grill-with-claude-docs
+# grill-notes
 
-Skill ツールで "grilling" を呼ぶ。Docs の操作は docs コネクタの指示に従い、docs skill があれば先に読み込む。
+Skill ツールで "grilling" を呼ぶ。
 
 ## 記録先
 
-引数に Docs の URL があればその文書に書き足し、無ければ議題を題にした文書を新しく作る。文書は `## 資料`、`## 用語`、`## 決定` の 3 節で始める。リポジトリに `GLOSSARY.md` や ADR を作らない。
+引数に既存の md のパスがあればそのファイルに書き足す。無ければ、md-output skill の規則で出力先を決め（`--vault` と `--path` もそれに従う）、議題を表す名前のファイルを新しく作る。ファイルは `## 資料`、`## 用語`、`## 決定` の 3 節で始める。
 
 ## 資料
 
-最初のラウンドの前に、Skill ツールで `read-sources` を呼ぶ。記録先の Docs は資料に含めない。返った一覧を `## 資料` に書き、最初のラウンドの冒頭で、読めなかった資料と未取得の 3 次資料の件数を示す。
+最初のラウンドの前に、Skill ツールで `read-sources` を呼ぶ。記録先のファイルは資料に含めない。返った一覧を `## 資料` に書き、最初のラウンドの冒頭で、読めなかった資料と未取得の 3 次資料の件数を示す。
 
 ラウンドの途中で新しい資料が出てきたら、`read-sources` の規則で読み、`## 資料` に書き足す。
 
