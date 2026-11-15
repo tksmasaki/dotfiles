@@ -1,8 +1,7 @@
 ---
 name: mkwt
-description: git mkwt で隔離された worktree を作る。渡された情報（issue、PR、作業内容の説明、直近の会話）から作業に適したブランチ名と分岐元を決めてから作り、作業スペースを worktree へ移す。手動起動専用（/mkwt）。
+description: git mkwt で隔離された worktree を作る。渡された情報（issue、PR、作業内容の説明、直近の会話）から作業に適したブランチ名と分岐元を決めてから作り、作業スペースを worktree へ移す。「worktree を作って」「別の worktree で作業を始めて」と頼まれたとき、/mkwt で使う。
 argument-hint: "[issue/PR番号 or URL | ブランチ名 | 作業内容] [起点]"
-disable-model-invocation: true
 ---
 
 # git mkwt で worktree を作る

@@ -3,9 +3,9 @@ name: rv-pr
 description: |
   他人の PR をレビューする準備から結果まで。git mkwt で PR の worktree を用意し、作業スペースを移して、
   pr-fullcheck をレビュアーモード（-r）で実行し、投稿に値する指摘を GitHub の pending レビューに行コメントとして置く。
-  submit はしない。手動起動専用（/rv-pr）。
+  submit はしない。他人の PR について、レビューのコメントを GitHub に置く（投稿する・下書きする）ところまで
+  頼まれたとき、/rv-pr で使う。コメントを置くよう頼まれていなければ pr-fullcheck を -r で使う。
 argument-hint: "<PR 番号か URL> [-s]"
-disable-model-invocation: true
 ---
 
 # PR の worktree を作ってレビューする（rv-pr）
@@ -79,7 +79,7 @@ HEAD が `headRefOid` と一致することを確かめてから次へ進む。
 
 ### 4. pr-fullcheck をレビュアーモードで実行する
 
-pr-fullcheck は手動起動専用なので、この SKILL.md の実体（シンボリックリンクを解決した先）と同じ skills ディレクトリにある `pr-fullcheck/SKILL.md` を読み、引数を `<PR> -r`（`-s` があれば付ける）として、その手順に従う。
+pr-fullcheck skill を、引数を `<PR> -r`（`-s` があれば付ける）として呼ぶ。呼べない環境では、この SKILL.md の実体（シンボリックリンクを解決した先）と同じ skills ディレクトリにある `pr-fullcheck/SKILL.md` を読んで従う。
 
 pr-fullcheck の手順 1 で止まった場合は、その案内をそのまま示して終了する。
 
