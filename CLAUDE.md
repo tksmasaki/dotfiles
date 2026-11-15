@@ -1,81 +1,66 @@
-# dotfiles (chezmoi)
+# dotfiles (mise)
 
-ドットファイルを chezmoi で管理する。ソースは `~/.local/share/chezmoi`、適用先は `$HOME`。
+ドットファイルを mise の dotfiles 機能で管理する。適用の定義はリポジトリ直下の `mise.toml` の `[dotfiles]`、適用先は `$HOME`。ツールは `Brewfile` で Homebrew から入れ、mise はリポジトリごとに版を固定する言語の処理系にだけ使う。
 
 ## このリポジトリは公開されている
 
 コミットメッセージとファイルに、他のリポジトリ名・組織名・業務の中身を書かない。別のリポジトリから持ち込んだ変更は「作業中のリポジトリ」「元のリポジトリ」と書く。
 
-`.githooks/pre-push` が、push するコミットのメッセージ・ファイル名・追加行を `~/.config/dotfiles/public-denylist.txt` の語と照合し、当たれば push を止める。一覧を公開しないため、このファイルは chezmoi の管理外に置く。hook は `install.sh` が `core.hooksPath` を設定して有効にする。
+`.githooks/pre-push` が、push するコミットのメッセージ・ファイル名・追加行を `~/.config/dotfiles/public-denylist.txt` の語と照合し、当たれば push を止める。一覧を公開しないため、このファイルはリポジトリの管理外に置く。hook は `install.sh` が `core.hooksPath` を設定して有効にする。
 
-## 管理対象
+## 配置
 
-ソースの `dot_<名前>` が `~/.<名前>` に対応する。`dot_claude/skills/foo/SKILL.md` は `~/.claude/skills/foo/SKILL.md`、`dot_zshrc` は `~/.zshrc` になる。個々のファイルはここに列挙しない。現在の一覧は `chezmoi managed --exclude=dirs` で引く。
+- `home/` は `$HOME` と同じ並びで置く。`dot-` で始まる名前が `.` で始まる名前に対応する（`home/dot-config/git/config` は `~/.config/git/config`）。
+- 適用先は `mise.toml` に 1 つずつ書く。ファイルは symlink、ディレクトリは `symlink-each` にする。`symlink-each` は管理外のファイルが同居するディレクトリでも、管理するファイルだけをリンクする。`~` そのものを対象にしない。適用先のディレクトリを走査するので、HOME 全体を読んで止まる。
+- `symlink-each` にしたディレクトリにファイルを足すだけなら `mise.toml` は変えない。それ以外の場所にファイルやディレクトリを足したら、`mise.toml` に適用先を足す。
+- `claude/` は `~/.claude/settings.json` の生成元。`agents/` は Codex と共有する skill の原本（後述）。
+- `archive/` は使っていない設定の保管場所で、適用しない。
 
-`exact_` プレフィックスは使わない。`~/.claude` や `~/.local/bin` には mise や各ツールが置いた symlink と管理外のファイルが同居していて、`exact_` を付けると `chezmoi apply` でそれらが削除される。
+## 適用
 
-## 編集の入口
+```bash
+mise -C <リポジトリ> dotfiles apply     # zsh では abbr の dotap
+mise -C <リポジトリ> dotfiles status    # 同じく dotst
+```
 
-`.chezmoi.toml.tmpl` で `mode = "symlink"` を指定しているため、テンプレート以外の管理対象は `$HOME` 側がソースへの symlink になる。`~/.claude/CLAUDE.md` や `~/.claude/hooks/*.sh` はどちら側から編集しても同じ実体。
-
-テンプレート（`*.tmpl`）だけは実体のコピーになる。`~/.claude/settings.json` を直接編集しても次の `chezmoi apply` で消えるので、`dot_claude/settings.json.tmpl` を編集して apply する。
-
-既存ファイルの編集は symlink 経由で即座に反映される。新規追加・リネーム・削除は `chezmoi apply` を実行するまで `$HOME` 側に現れない。
-
-ソースを削除・リネームしても、apply は適用先の古い symlink を消さない。改名した skill や hook は、apply のあとに `$HOME` 側の旧パスを手で消す。
+`$HOME` 側はソースへの symlink なので、既存ファイルの編集はどちら側からでも即座に反映される。新規追加・リネーム・削除は apply で反映される。`symlink-each` の配下でソースを消すと、次の apply でリンクも消える。
 
 skill / rules を編集しても実行中のセッションには反映されない。そのセッションで使うなら `/reload-skills` を打つ。
 
-`$HOME` 側にある既存ファイルを管理下に入れるときは `chezmoi add <適用先パス>`。add はソースにコピーを作るだけで、適用先は通常ファイルのまま残るので、続けて `chezmoi apply <適用先パス>` を実行して symlink に置き換える。忘れると `$HOME` 側の編集がソースに反映されない。
+zsh の `$DOTFILES_DIR` は、`~/.zshrc` の symlink をたどってリポジトリの場所を決める。リポジトリをどこに複製しても動く。
 
-symlink にならない管理対象は `~/.claude/settings.json` だけ。`install.sh` は apply 後に通常ファイルとして残った管理対象を列挙して警告する。
+## Claude Code の settings.json
 
-## Claude Code の設定変更と apply の衝突
+`~/.claude/settings.json` だけは実体のファイルで、apply のたびに `claude/build-settings.sh` が `claude/settings.base.json` から作る。変更は `settings.base.json` に書く。
 
-`/model` などの Claude Code 自身による設定変更は `~/.claude/settings.json` に書かれるため、`chezmoi apply` でテンプレートの値に戻る。`chezmoi status` に `MM .claude/settings.json` が出ていたら、どちらを残すか決めてから apply する。
+`/model` などの Claude Code 自身による設定変更は `~/.claude/settings.json` に書かれ、次の apply で上書きされる（mise は上書きの前に警告を出す）。残したい変更は、apply の前に `settings.base.json` に書き戻す。
 
-`~/` 側の変更を残す場合、テンプレートなので `chezmoi re-add` では取り込めない。`chezmoi diff ~/.claude/settings.json` で差分を見て `dot_claude/settings.json.tmpl` に手で書き戻す。
+`build-settings.sh` は、`~/.config/claude/` の次のファイルがあれば合成する。リポジトリの管理外で、マシンごとに置く。jq が無い環境では合成せず、`settings.base.json` をそのまま使う。
 
-テンプレートの値で上書きすると決めたら `chezmoi apply --force ~/.claude/settings.json` を実行する。`--force` が無いと chezmoi は上書きするか対話で聞き、Claude のセッションからは答えられずに止まる。
-
-衝突を保留したまま他のファイルだけ適用したいときは、適用先パスを渡す。`chezmoi apply ~/.local/bin/roles-up` のように書けば `settings.json` に触らずに済む。
-
-`settings.json.tmpl` は `~/.config/claude/env.json` があればそのキーと値を `env` に追加する。chezmoi の管理外で、マシンごとに置く。`env.json` には md-output skill が読む `MD_OUTPUT_DIR` のような、マシン固有のパスを入れる。
-
-`~/.config/claude/plugins.json` と `~/.config/claude/denied-mcp-servers.json` も同じ仕組みで、それぞれ `enabledPlugins` と `deniedMcpServers` に入る。
-
-## コマンド
-
-```bash
-chezmoi diff ~/.claude/settings.json           # 適用先の絶対パスで渡す
-chezmoi source-path ~/.claude/settings.json    # 適用先からソースを引く
-npx markdownlint-cli2 --config dot_markdownlint.jsonc <file>  # ソースでは設定名が dot_ なので明示する
-```
-
-## ソース直下にファイルを置くとき
-
-ソース直下の通常ファイルは `~/<名前>` に適用される。リポジトリ用のドキュメントは `.chezmoiignore` に入れて適用対象から外す。
-
-`.chezmoiignore` のパターンは適用先の相対パス全体と照合する。`CLAUDE.md` はルート直下だけを外し、`.claude/CLAUDE.md` は管理対象のまま残る。
+- `env.json`: `env` に足す。md-output skill が読む `MD_OUTPUT_DIR` のような、マシン固有のパスを入れる
+- `plugins.json`: `enabledPlugins` に足す
+- `denied-mcp-servers.json`: `deniedMcpServers` に入れる
 
 ## hooks / skills / rules
 
-`dot_claude/hooks/*.sh` は symlink 経由で実行され、実行ビットはソース側のファイルモードで決まる。`executable_` プレフィックスは使っていない。
+`home/dot-claude/hooks/*.sh` は symlink 経由で実行され、実行ビットはソース側のファイルモードで決まる。
 
-hook は `dot_claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUTO_COMMIT` などの現在値を settings ではなくファイルから読み直す。最優先はリポジトリの git ディレクトリ直下の `claude-env.json`（worktree ごとの上書き）。この値を書き換える `toggle-auto-commit` / `toggle-remote-confirm` は `dot_local/bin/` で管理している。
+hook は `home/dot-claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUTO_COMMIT` などの現在値を settings ではなくファイルから読み直す。最優先はリポジトリの git ディレクトリ直下の `claude-env.json`（worktree ごとの上書き）。この値を書き換える `toggle-auto-commit` / `toggle-remote-confirm` は `home/dot-local/bin/` で管理している。
 
-`dot_local/bin/` は `~/.local/bin/` に symlink される自作コマンドの置き場。mise が置く shim と同居するため `exact_` は使わない。
-
-`dot_claude/skills/*/SKILL.md` を追加すると `~/.claude/skills/` に symlink され、全プロジェクトで有効になる。
-
-`dot_claude/rules/*.md` も `~/.claude/rules/` に symlink され、全プロジェクトのセッションで自動的に読み込まれる。
+`home/dot-claude/skills/<名前>/` は Claude だけで使う skill。`home/dot-claude/rules/*.md` は全プロジェクトのセッションで自動的に読み込まれ、Claude 固有の指示だけを置く。
 
 ## Codex と共有する
 
-正本は Claude 側に置き、Codex には次の形で見せる。
+共有する指示と skill の原本は Codex 側に置き、Claude からはそれを参照する。
 
-- skill: 共有するものだけ `dot_agents/skills/symlink_<名前>.tmpl` を置き、`~/.agents/skills/<名前>` からソースの `dot_claude/skills/<名前>` へ symlink する。`~/.claude/skills/<名前>` を指さないのは、Codex がフォルダの symlink はたどるのに、symlink になった `SKILL.md` は読まないため。Claude 固有の道具（セッション移動、Artifact、Claude Docs、組み込みの code-review、セッションログ）が手順の中心にある skill は共有しない。共有する skill で Claude 固有の道具に触れる箇所は、「使える質問の道具（Claude Code では AskUserQuestion）」のように目的で書き、道具が無い環境での振る舞いを添える。
-- `disable-model-invocation: true` の skill を共有するときは、同じ skill に `agents/openai.yaml` を置き、`policy.allow_implicit_invocation: false` で Codex からの暗黙の呼び出しを止める。
-- 指示: `dot_codex/AGENTS.md.tmpl` が `dot_claude/CLAUDE.md` と rules を連結して `~/.codex/AGENTS.md` を作る。Codex に取り込み構文が無いため。rules を足したら、Claude 固有でなければこのテンプレートにも足す。Claude 固有の指示（Claude Code の道具やセッションの扱い）は `dot_claude/CLAUDE.md` に書かず、テンプレートに入れない rules（`claude-tools.md`、`session-messages.md`）に置く。合計は Codex の上限 32 KiB に収める。
-- `~/.agents/skills` には `npx skills` が入れた skill も同居し、Claude 側から symlink されているものがある。chezmoi 管理外なので消さない。
+- 指示: 原本は `home/dot-codex/AGENTS.md`（`~/.codex/AGENTS.md`）。`home/dot-claude/CLAUDE.md` は `@~/.codex/AGENTS.md` で取り込むだけにする。Claude 固有の指示（Claude Code の道具の扱い）は AGENTS.md に書かず、rules（`claude-tools.md`）に置く。AGENTS.md は Codex の上限 32 KiB に収める。
+- skill: 共有するものの原本は `agents/skills/<名前>` に置き、`mise.toml` で `~/.agents/skills/<名前>` と `~/.claude/skills/<名前>` からフォルダごと symlink する。Codex は symlink になった `SKILL.md` を読まないので、ファイルごとのリンクにしない。
+- Claude 固有の道具（Artifact、Claude Docs、組み込みの code-review、セッションログ）が手順の中心にある skill は共有しない。共有する skill で Claude 固有の道具に触れる箇所は、「使える質問の道具（Claude Code では AskUserQuestion）」のように目的で書き、道具が無い環境での振る舞いを添える。
+- 手動起動専用の skill は、SKILL.md の `disable-model-invocation: true`（Claude 向け）と `agents/openai.yaml` の `policy.allow_implicit_invocation: false`（Codex 向け）の両方を書く。Claude は `openai.yaml` を読まない。
+- `~/.agents/skills` と `~/.claude/skills` には `npx skills` が入れた skill も同居する。リポジトリの管理外なので消さない。
 - hook・権限・MCP は形式が違うので共有しない。
+
+## 新しいマシン
+
+- macOS: リポジトリを複製して `install.sh` を実行する。Homebrew・Brewfile の導入、dotfiles の適用、mise の処理系の導入までを行う。
+- クラウド環境: `cloud-setup.sh` の中身を環境のセットアップスクリプトに貼る。リポジトリの複製より前に動くので、mise のバイナリを GitHub Releases から直接取る。版は手動で更新する。

@@ -1,0 +1,1 @@
+{{ exec(command=vars.dotfiles_dir ~ "/claude/build-settings.sh") }}

@@ -24,28 +24,10 @@ else
 	echo "Homebrew is already installed"
 fi
 
-# https://sheldon.cli.rs
-if ! command -v sheldon > /dev/null 2>&1; then
-	echo "Install sheldon"
-	brew install sheldon
-else
-	echo "sheldon is already installed"
-fi
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# https://mise.jdx.dev
-if ! command -v mise > /dev/null 2>&1; then
-  echo "Install mise"
-	brew install mise
-else
-	echo "mise is already installed"
-fi
-
-if ! command -v chezmoi > /dev/null 2>&1; then
-	echo "Install chezmoi"
-	brew install chezmoi
-else
-	echo "chezmoi is already installed"
-fi
+echo "Install Homebrew packages"
+brew bundle --file "$SCRIPT_DIR/Brewfile"
 
 # https://github.com/alacritty/alacritty/releases
 if [[ ! -d "/Applications/Alacritty.app" ]]; then
@@ -54,30 +36,30 @@ else
 	echo "Alacritty is already installed"
 fi
 
-# https://github.com/yuru7/HackGen
-if [[ ! -f "$HOME/Library/Fonts/HackGenConsoleNF-Regular.ttf" ]]; then
-	echo "Install HackGen Console NF"
-	brew install --cask font-hackgen-nerd
-else
-	echo "HackGen Console NF is already installed"
-fi
+# mise は symlink の適用先にある実ファイルを上書きせず、適用全体を止めるため
+backup_conflicting_files() {
+	local suffix=".bak.$(date +%Y%m%d%H%M%S)"
+	local target
+	for _ in {1..100}; do
+		target="$(mise -C "$SCRIPT_DIR" dotfiles status --json 2>/dev/null | jq -r '
+			[.files[]
+				| select(.state == "differs" and (.reason | endswith("exists but is not a symlink")))
+				| ((.reason | capture("^(?<path>.+): exists").path) // .target)]
+			| first // empty')"
+		[[ -z "$target" ]] && return 0
+		target="${target/#\~/$HOME}"
+		echo "Back up $target to $target$suffix"
+		mv "$target" "$target$suffix"
+	done
+	echo "Too many conflicting files" >&2
+	return 1
+}
 
-if ! command -v herdr > /dev/null 2>&1; then
-	echo "Install herdr"
-  brew install herdr
-else
-	echo "herdr is already installed"
-fi
-
-echo "Apply dotfiles with chezmoi"
-chezmoi init --apply tksmasaki
-git -C "$(chezmoi source-path)" config core.hooksPath .githooks
-
-unsynced="$(chezmoi managed --include=files --path-style=absolute)"
-if [[ -n "$unsynced" ]]; then
-	echo "Warning: not symlinked, so edits in $HOME will not sync back:"
-	echo "$unsynced" | sed 's/^/  /'
-fi
+echo "Apply dotfiles with mise"
+git -C "$SCRIPT_DIR" config core.hooksPath .githooks
+mise trust "$SCRIPT_DIR/mise.toml"
+backup_conflicting_files
+mise -C "$SCRIPT_DIR" dotfiles apply --yes
 
 eval "$(mise activate zsh)"
 echo "Trust mise configuration"
@@ -88,7 +70,6 @@ mise install --cd ~
 # Run local setup if --local option was specified
 if [[ "$LOCAL_SETUP" = true ]]; then
   echo "Running local setup..."
-	SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   "$SCRIPT_DIR/setup_for_local.sh"
 fi
 

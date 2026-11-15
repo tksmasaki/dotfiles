@@ -1,0 +1,6 @@
+[tools]
+node = "22.23.4"
+ruby = "3.4.9"
+
+[settings.github]
+credential_command = 'gh auth token --hostname "$MISE_CREDENTIAL_HOST"'
