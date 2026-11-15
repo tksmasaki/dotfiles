@@ -17,7 +17,7 @@ Claude と Codex は、保存場所もイベントの形も異なる。実行し
 
 現行のログでは `type=user` / `assistant` の message を起点にする。`api-request-blob` などの送信記録を重ねて数えない。実際の schema と異なる場合は構造を確認してから読み替える。
 
-- 人の発言: `user` から `tool_result`、`isMeta`、hook の通知、slash command のラッパー、サブエージェントの報告を除く。人の入力と確定できないものは別に数える
+- 人の発言: `user` から `tool_result`、`isMeta`、hook の通知、slash command のラッパー、サブエージェントの報告を除く。`entrypoint` が `sdk-cli` のレコードは、他のエージェントやスクリプトが起動したセッションの依頼として分ける。人の入力と確定できないものは別に数える
 - 失敗: `tool_result` の `is_error` と対応する呼び出しを照合する。失敗した呼び出しと、それを説明する返信を別の失敗として数えない
 - ツール利用: assistant の `tool_use` を使い、ツール名・呼び出し ID・必要なら shell の先頭語だけを数える。引数や出力全文は集計表へ入れない
 - 最終出力: assistant の完了した応答を対象にし、途中の説明・thinking・サブエージェントの出力とは分ける。言語や文体を比べる場合は、対象の条件を固定する
@@ -26,7 +26,7 @@ Claude と Codex は、保存場所もイベントの形も異なる。実行し
 
 現行のローカル履歴では、`session_meta` / `turn_context` が文脈、`response_item` が発言やツール呼び出し、`event_msg` が進行状況などを持つ。過去版では構造が違うため、各取得元で先に確認する。
 
-- 人の発言: `response_item` の `message` で `role=user` のものを起点にする。環境情報、AGENTS の注入、再開時の要約、エージェント間通信をそのまま人の依頼に数えない。区別できないレコードは母数から分け、未分類として残す
+- 人の発言: `response_item` の `message` で `role=user` のものを起点にする。環境情報、AGENTS の注入、再開時の要約、エージェント間通信、操作の承認を判定させるために履歴を渡す依頼文をそのまま人の依頼に数えない。区別できないレコードは母数から分け、未分類として残す
 - 最終出力: assistant の message で `phase=final_answer` など、実際の schema が示す最終応答を使う。commentary・reasoning・進行イベントを混ぜない。`task_complete` の最終文が同じ応答の複製なら重ねて数えない
 - ツール利用: `function_call` / `custom_tool_call` と対応する output を call ID で結び付ける。複数ツールをまとめた呼び出しは、外側の呼び出し数と内側の実行数を区別する。内訳が取れなければ推定しない
 - 失敗: 構造化されたエラー、終了コード、呼び出しの結果を確認する。出力中に error という語があるだけで失敗に数えない。判定できないものは未分類とする
