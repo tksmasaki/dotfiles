@@ -222,6 +222,7 @@ else
     fi
 
     if [ -n "$START" ]; then
+      START=${START#origin/}
       git fetch origin "$START" >/dev/null 2>&1 || true
       if git show-ref --verify --quiet "refs/remotes/origin/$START"; then
         BASE_REF="origin/$START"
