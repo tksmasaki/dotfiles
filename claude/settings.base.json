@@ -7,12 +7,6 @@
     "CLAUDE_CODE_SUBAGENT_MODEL": "opus",
     "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1",
     "AGENT_AUTO_COMMIT": "1"
-{{- $envPath := joinPath .chezmoi.homeDir ".config/claude/env.json" }}
-{{- if stat $envPath }}
-{{- range $k, $v := include $envPath | fromJson }},
-    {{ $k | toJson }}: {{ $v | toJson }}
-{{- end }}
-{{- end }}
   },
   "permissions": {
     "allow": [
@@ -58,10 +52,6 @@
     ],
     "defaultMode": "auto"
   },
-{{- $deniedMcpPath := joinPath .chezmoi.homeDir ".config/claude/denied-mcp-servers.json" }}
-{{- if stat $deniedMcpPath }}
-  "deniedMcpServers": {{ include $deniedMcpPath | fromJson | toJson }},
-{{- end }}
   "model": "opus[1m]",
   "modelSettings": {
     "claude-opus-5-5": {
@@ -145,12 +135,6 @@
     "playwright@claude-plugins-official": true,
     "hookify@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false
-{{- $pluginsPath := joinPath .chezmoi.homeDir ".config/claude/plugins.json" }}
-{{- if stat $pluginsPath }}
-{{- range $k, $v := include $pluginsPath | fromJson }},
-    {{ $k | toJson }}: {{ $v | toJson }}
-{{- end }}
-{{- end }}
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {

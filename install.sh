@@ -29,13 +29,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "Install Homebrew packages"
 brew bundle --file "$SCRIPT_DIR/Brewfile"
 
-if ! command -v chezmoi > /dev/null 2>&1; then
-	echo "Install chezmoi"
-	brew install chezmoi
-else
-	echo "chezmoi is already installed"
-fi
-
 # https://github.com/alacritty/alacritty/releases
 if [[ ! -d "/Applications/Alacritty.app" ]]; then
 	echo "Alacritty is not installed. Please install it from: https://github.com/alacritty/alacritty/releases"
@@ -43,15 +36,10 @@ else
 	echo "Alacritty is already installed"
 fi
 
-echo "Apply dotfiles with chezmoi"
-chezmoi init --apply tksmasaki
-git -C "$(chezmoi source-path)" config core.hooksPath .githooks
-
-unsynced="$(chezmoi managed --include=files --path-style=absolute)"
-if [[ -n "$unsynced" ]]; then
-	echo "Warning: not symlinked, so edits in $HOME will not sync back:"
-	echo "$unsynced" | sed 's/^/  /'
-fi
+echo "Apply dotfiles with mise"
+git -C "$SCRIPT_DIR" config core.hooksPath .githooks
+mise trust "$SCRIPT_DIR/mise.toml"
+mise -C "$SCRIPT_DIR" dotfiles apply --yes
 
 eval "$(mise activate zsh)"
 echo "Trust mise configuration"

@@ -18,6 +18,7 @@ export PAGER=less
 export LESS='-giXRMS'
 export ABBR_QUIETER=1
 export ABBR_SET_EXPANSION_CURSOR=1
+export DOTFILES_DIR="${${:-$HOME/.zshrc}:A:h:h}"
 
 # ============================== Homebrew
 # mise が言語の処理系を前に積むので、先に通す
@@ -113,16 +114,16 @@ ab cn='code -n'
 ab cr='code -r'
 # devcontainer
 ab dcz='devcontainer exec --remote-env TERM=xterm-256color zsh'
-# chezmoi
-ab -f cm='chezmoi'
-ab cmcd='chezmoi cd'
-ab cmap='chezmoi apply'
-ab cdots="code $(chezmoi source-path)"
+# dotfiles
+ab dotcd="cd $DOTFILES_DIR"
+ab dotap="mise -C $DOTFILES_DIR dot apply"
+ab dotst="mise -C $DOTFILES_DIR dot status"
+ab cdots="code $DOTFILES_DIR"
 # Alacritty
 ab val='vim ~/.config/alacritty/alacritty.toml'
 # herdr
 ab hrs='herdr workspace create --cwd ~/src --label "src"'
-ab hrd='herdr workspace create --cwd ~/.local/share/chezmoi --label "dotfiles"'
+ab hrd="herdr workspace create --cwd $DOTFILES_DIR --label dotfiles"
 ab hr='herdr'
 # gh-notify
 ab tghn='toggle-gh-notify'
