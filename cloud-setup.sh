@@ -21,4 +21,4 @@ if ! git clone --depth 1 https://github.com/tksmasaki/dotfiles.git "$DOTFILES_DI
 fi
 
 mise trust "$DOTFILES_DIR/mise.toml"
-mise -C "$DOTFILES_DIR" dotfiles apply --yes || true
+mise -C "$DOTFILES_DIR" dotfiles apply --yes --force || true

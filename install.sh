@@ -36,9 +36,29 @@ else
 	echo "Alacritty is already installed"
 fi
 
+# mise は symlink の適用先にある実ファイルを上書きせず、適用全体を止めるため
+backup_conflicting_files() {
+	local suffix=".bak.$(date +%Y%m%d%H%M%S)"
+	local target
+	for _ in {1..100}; do
+		target="$(mise -C "$SCRIPT_DIR" dotfiles status --json 2>/dev/null | jq -r '
+			[.files[]
+				| select(.state == "differs" and (.reason | endswith("exists but is not a symlink")))
+				| ((.reason | capture("^(?<path>.+): exists").path) // .target)]
+			| first // empty')"
+		[[ -z "$target" ]] && return 0
+		target="${target/#\~/$HOME}"
+		echo "Back up $target to $target$suffix"
+		mv "$target" "$target$suffix"
+	done
+	echo "Too many conflicting files" >&2
+	return 1
+}
+
 echo "Apply dotfiles with mise"
 git -C "$SCRIPT_DIR" config core.hooksPath .githooks
 mise trust "$SCRIPT_DIR/mise.toml"
+backup_conflicting_files
 mise -C "$SCRIPT_DIR" dotfiles apply --yes
 
 eval "$(mise activate zsh)"
