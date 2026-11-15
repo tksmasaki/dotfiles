@@ -49,7 +49,6 @@ skill / rules を編集しても実行中のセッションには反映されな
 ```bash
 chezmoi diff ~/.claude/settings.json           # 適用先の絶対パスで渡す
 chezmoi source-path ~/.claude/settings.json    # 適用先からソースを引く
-npx markdownlint-cli2 --config dot_markdownlint.jsonc <file>  # ソースでは設定名が dot_ なので明示する
 ```
 
 ## ソース直下にファイルを置くとき
