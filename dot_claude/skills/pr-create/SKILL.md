@@ -10,9 +10,6 @@ description: GitHub の PR を新しく作るときの手順。draft の扱い�
 ## draft で作る
 
 `gh pr create --title <タイトル> --body-file <ファイル> --draft` で作る。**`--draft` を既定にする。** ユーザーが draft にしないと指示したときだけ外す。**ready に上げるのもユーザーの指示を受けてから。** 作成の時点では動作確認やスコープ外の起票が済んでいないことが多い。draft なら、レビュワーに通知が飛ぶ前に足せる。
-
-PR の作成をユーザーに促すときは、アプリの `create_pr` アクション（wrap_up のボタン）を使わず、返信のボタンにする。このアクションは draft にしない指示を送るため、`--draft` の既定が効かない。
-
 ## 既定ブランチ以外を base にしたら issue を紐付ける
 
 base が既定ブランチ（`gh repo view --json defaultBranchRef -q .defaultBranchRef.name`）でない PR では、本文の `close` キーワードで issue が Development に紐付かない。作成した直後に、閉じる issue ごとに GraphQL の `addCloseIssueReferences` で紐付け、最後のコマンドで issue 番号が返ることを確かめる。紐付けても、既定ブランチ以外へのマージでは issue は自動で閉じない。
