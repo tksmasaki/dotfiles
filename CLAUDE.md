@@ -65,16 +65,17 @@ hook は `dot_claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUTO_COM
 
 `dot_local/bin/` は `~/.local/bin/` に symlink される自作コマンドの置き場。mise が置く shim と同居するため `exact_` は使わない。
 
-`dot_claude/skills/*/SKILL.md` を追加すると `~/.claude/skills/` に symlink され、全プロジェクトで有効になる。
+`dot_claude/skills/<名前>/SKILL.md` は Claude だけで使う skill。追加すると `~/.claude/skills/` に symlink され、全プロジェクトで有効になる。
 
-`dot_claude/rules/*.md` も `~/.claude/rules/` に symlink され、全プロジェクトのセッションで自動的に読み込まれる。Codex と共有する指示は rules に置かず、`dot_claude/CLAUDE.md` に書く。rules には Claude 固有の指示だけを置く。
+`dot_claude/rules/*.md` も `~/.claude/rules/` に symlink され、全プロジェクトのセッションで自動的に読み込まれる。rules には Claude 固有の指示だけを置く。
 
 ## Codex と共有する
 
-正本は Claude 側に置き、Codex には次の形で見せる。
+共有する指示と skill の原本は Codex 側に置き、Claude からはそれを参照する。
 
-- skill: 共有するものだけ `dot_agents/skills/symlink_<名前>.tmpl` を置き、`~/.agents/skills/<名前>` からソースの `dot_claude/skills/<名前>` へ symlink する。`~/.claude/skills/<名前>` を指さないのは、Codex がフォルダの symlink はたどるのに、symlink になった `SKILL.md` は読まないため。Claude 固有の道具（Artifact、Claude Docs、組み込みの code-review、セッションログ）が手順の中心にある skill は共有しない。共有する skill で Claude 固有の道具に触れる箇所は、「使える質問の道具（Claude Code では AskUserQuestion）」のように目的で書き、道具が無い環境での振る舞いを添える。
-- `disable-model-invocation: true` の skill を共有するときは、同じ skill に `agents/openai.yaml` を置き、`policy.allow_implicit_invocation: false` で Codex からの暗黙の呼び出しを止める。
-- 指示: `dot_codex/AGENTS.md.tmpl` が `dot_claude/CLAUDE.md` を取り込んで `~/.codex/AGENTS.md` を作る。Claude 固有の指示（Claude Code の道具の扱い）は `dot_claude/CLAUDE.md` に書かず、rules（`claude-tools.md`）に置く。`dot_claude/CLAUDE.md` は Codex の上限 32 KiB に収める。
+- 指示: 原本は `dot_codex/AGENTS.md`（`~/.codex/AGENTS.md`）。`dot_claude/CLAUDE.md` は `@~/.codex/AGENTS.md` で取り込むだけにする。Claude 固有の指示（Claude Code の道具の扱い）は AGENTS.md に書かず、rules（`claude-tools.md`）に置く。AGENTS.md は Codex の上限 32 KiB に収める。
+- skill: 共有するものの原本は `agents/skills/<名前>` に置く。`agents` は `.chezmoiignore` で適用対象から外し、`dot_agents/skills/symlink_<名前>.tmpl` と `dot_claude/skills/symlink_<名前>.tmpl` から、フォルダごと symlink する。原本を `dot_agents/skills/` に直接置かないのは、chezmoi がファイルごとの symlink を作り、Codex は symlink になった `SKILL.md` を読まないため。
+- Claude 固有の道具（Artifact、Claude Docs、組み込みの code-review、セッションログ）が手順の中心にある skill は共有しない。共有する skill で Claude 固有の道具に触れる箇所は、「使える質問の道具（Claude Code では AskUserQuestion）」のように目的で書き、道具が無い環境での振る舞いを添える。
+- 手動起動専用の skill は、SKILL.md の `disable-model-invocation: true`（Claude 向け）と `agents/openai.yaml` の `policy.allow_implicit_invocation: false`（Codex 向け）の両方を書く。Claude は `openai.yaml` を読まない。
 - `~/.agents/skills` には `npx skills` が入れた skill も同居し、Claude 側から symlink されているものがある。chezmoi 管理外なので消さない。
 - hook・権限・MCP は形式が違うので共有しない。
