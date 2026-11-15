@@ -1,43 +1,18 @@
 ---
 name: md-output
 description: md ファイルにまとめ・調査結果・ドキュメントを出力するときの出力先の決め方とチャットへの要約の書き方。「md に出して」「ファイルに保存」と言われたとき、他の skill が md ファイルを書くときに使う。
-argument-hint: "[-d]（デフォルトディレクトリに固定する）"
+argument-hint: "[--vault | --path <ディレクトリ>]（省略時は ./tmp）"
 ---
 
 # md ファイル出力ルール
 
-## 出力先の決定ルール
+## 出力先
 
-### デフォルト出力先
+スキルの引数かユーザーの指示で、出力先を次のとおり決める。確認は取らない。
 
-デフォルト出力先は次の順で最初に見つかった値。以下で「デフォルト」と書いたらこのディレクトリを指す。
-
-1. 環境変数 `MD_OUTPUT_DIR`（`echo "$MD_OUTPUT_DIR"`）
-2. `~/.config/claude/env.json` の `MD_OUTPUT_DIR`（`jq -r '.MD_OUTPUT_DIR // empty' ~/.config/claude/env.json`）
-3. `~/Documents/`
-
-`MD_OUTPUT_DIR` はマシンごとに `~/.config/claude/env.json` に置く（`{"MD_OUTPUT_DIR": "/abs/path"}`）。Claude Code はこの値を `~/.claude/settings.json` の `env` から環境変数として受け取る。他のエージェントでは環境変数が空になるので、2 でファイルから読む。
-
-### `-d` が指定された場合（最優先）
-
-スキルの引数やユーザーの指示に `-d` が含まれるときは、モードやブランチ名にかかわらずデフォルトに出力する。セッション中に別の出力先を記憶していても、その回はデフォルトを使う（記憶しているデフォルト出力先は更新しない）。
-
-### ユーザーに確認できないモードの場合（確認なし）
-
-ユーザーに確認を取れない実行モードのとき、確認せず次の順で出力先を決める。Claude Code では、注入されたコンテキストの `permission_mode` が `auto` / `bypassPermissions` / `dontAsk` のとき。他のエージェントでは、その環境の承認設定から判断し、判断がつかなければ通常モードとして扱う。
-
-1. セッション中に出力先が指定済みなら、それを使う。
-2. git ブランチ名が `<prefix>/<branch-name>` 形式（例: `feature/123-add-new-feature`）なら、prefix（最初の `/` まで）を除いたブランチ名で `<デフォルト>/<branch-name>/` に出力する。
-3. それ以外（`main` や `/` を含まないブランチを含む）はデフォルトに出力する。
-
-### 通常モードの場合（上記以外。Claude Code では permission_mode が default / acceptEdits / plan、または未注入のとき）
-
-- セッション初回の md 出力時は、出力先をユーザーに選択させる（使える質問の道具を使う。Claude Code では `AskUserQuestion`）:
-  - `default` - デフォルト（選択肢には解決した絶対パスを表示する）
-  - ブランチ名フォルダ - git ブランチが `<prefix>/<branch-name>` 形式なら `<デフォルト>/<branch-name>/`（該当しない場合はこの選択肢を出さない）
-  - 直接入力
-- 選択した出力先をセッション中のデフォルト出力先として記憶し、2回目以降は確認なしで使用する。
-- 出力先の変更指示（「今後は〜に出して」など）があった場合は、記憶しているデフォルト出力先を更新し、それ以降はその出力先を使う。
+- 指定なし: 作業ディレクトリの `./tmp`
+- `--vault`: vault の直下。vault のパスは環境変数 `MD_OUTPUT_DIR`、空なら `~/.config/claude/env.json` の `MD_OUTPUT_DIR`（`jq -r '.MD_OUTPUT_DIR // empty' ~/.config/claude/env.json`）から引く。どちらにも無ければ、書き出さずにそう伝える。
+- `--path <ディレクトリ>`: 指定したディレクトリ
 
 出力先ディレクトリは `mkdir -p` で作成してから書き出す。
 ファイル名は出力内容を表す kebab-case にする。
@@ -49,7 +24,7 @@ argument-hint: "[-d]（デフォルトディレクトリに固定する）"
 例:
 
 ```text
-保存しました: <デフォルト>/123-add-new-feature/xxx.md
+保存しました: /abs/path/to/repo/tmp/xxx.md
 （調査対象16件中、条件に該当する4件を特定）
 ```
 
