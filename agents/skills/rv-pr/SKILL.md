@@ -1,26 +1,28 @@
 ---
 name: rv-pr
 description: |
-  他人の PR をレビューする準備から結果まで。git mkwt で PR の worktree を用意し、作業スペースを移して、
+  他人の PR をレビューする準備から結果まで。git mkwt で PR の worktree を用意し、その worktree を対象に
   pr-fullcheck をレビュアーモード（-r）で実行し、投稿に値する指摘を GitHub の pending レビューに行コメントとして置く。
   submit はしない。他人の PR について、レビューのコメントを GitHub に置く（投稿する・下書きする）ところまで
   頼まれたとき、/rv-pr で使う。コメントを置くよう頼まれていなければ pr-fullcheck を -r で使う。
-argument-hint: "<PR 番号か URL> [-s]"
+  作業スペースは、--move を渡されたか移るよう頼まれたときだけ worktree へ移す。
+argument-hint: "<PR 番号か URL> [-s] [--move]"
 ---
 
 # PR の worktree を作ってレビューする（rv-pr）
 
-他人の PR について、worktree の用意、作業スペースの移動、`pr-fullcheck -r` の実行、pending レビューへの投稿を続けて行う。
+他人の PR について、worktree の用意、その worktree を対象にした `pr-fullcheck -r` の実行、pending レビューへの投稿を続けて行う。作業スペースは、指示が無ければ移さない。
 **コードを書き換えない。GitHub には pending レビューとしてコメントを置くだけで、submit しない。** pending のコメントは自分にしか見えず、submit するかはユーザーが決める。
 
 ## 引数
 
 ```text
-/rv-pr <PR 番号か URL> [-s]
+/rv-pr <PR 番号か URL> [-s] [--move]
 ```
 
 - **PR**: 必須。無ければ何もせずに引数の形を示して終了する。
 - **`-s`**: そのまま pr-fullcheck に渡す。解釈は pr-fullcheck の「引数」に従う。
+- **`--move`**: 作業スペースを worktree へ移す。ユーザーが移るよう頼んだときも同じに扱う。
 
 PR の対象リポジトリの作業ツリー内で実行する。`gh` の対象も worktree の作成元も、カレントのリポジトリから決まる。`git mkwt` が PATH に無ければ、そう伝えて終了する。
 
@@ -39,7 +41,7 @@ gh api user --jq .login
 - PR が無い、または `state` が `MERGED` か `CLOSED`。
 - 作成者が自分。自分の PR は `/pr-fullcheck`（`-r` なし）で確かめるよう案内する。
 
-次の場合は、PR の作者が書いた設定・hook・指示が、worktree へ移った後のエージェントで動く。手順 2 に進む前に該当するファイルを示し、続けてよいかユーザーに確認する。承認が得られなければ終了する。
+次の場合は、PR の作者が書いた設定・hook・指示が、worktree へ移った後のエージェントや、worktree の中で実行するコマンドで動く。手順 2 に進む前に該当するファイルを示し、続けてよいかユーザーに確認する。承認が得られなければ終了する。
 
 - `isCrossRepository` が true（フォークの PR）。
 - 変更ファイルに `.claude/`、`.codex/`、`.agents/`、`CLAUDE.md`、`CLAUDE.local.md`、`AGENTS.md`、`.mcp.json`、`.husky/`、`.githooks/` のいずれかが含まれる。
@@ -68,11 +70,11 @@ git -C <worktree> -c core.hooksPath=/dev/null merge --ff-only FETCH_HEAD
 
 HEAD が `headRefOid` と一致することを確かめてから次へ進む。
 
-### 3. 作業スペースを worktree へ移す
+### 3. 頼まれたときだけ作業スペースを worktree へ移す
 
-使える道具で、作業スペースを worktree の絶対パスへ移す。移し方と反映の時期は道具に任せる。続く手順は worktree の中で実行するので、`pwd` が worktree を指すことを確かめてから進む。
+既定では移さない。`--move` があるか、ユーザーが移るよう頼んだときだけ、使える道具で作業スペースを worktree の絶対パスへ移す。移し方と反映の時期は道具に任せる。移したら、`pwd` が worktree を指すことを確かめてから進む。
 
-次の場合は、pr-fullcheck を実行せずに案内して終了する。
+移すよう頼まれたのに移せなかった場合は、pr-fullcheck を実行せずに案内して終了する。
 
 - 移す道具が無い、またはユーザーが移動を承認しなかった。`cd <worktree>` と `/pr-fullcheck <PR> -r` を案内する。
 - `pwd` が worktree にならない。移った後に `/pr-fullcheck <PR> -r` を打つよう案内する。
@@ -80,6 +82,13 @@ HEAD が `headRefOid` と一致することを確かめてから次へ進む。
 ### 4. pr-fullcheck をレビュアーモードで実行する
 
 pr-fullcheck skill を、引数を `<PR> -r`（`-s` があれば付ける）として呼ぶ。呼べない環境では、この SKILL.md の実体（シンボリックリンクを解決した先）と同じ skills ディレクトリにある `pr-fullcheck/SKILL.md` を読んで従う。
+
+作業スペースを移していないときは、pr-fullcheck と、そこから呼ぶ skill の作業を worktree に向けて行う。カレントディレクトリのまま実行すると、別のブランチを PR として読んでしまう。
+
+- `git` は `git -C <worktree>` で実行する。pr-fullcheck の手順 1 の HEAD・`git status`・`--show-toplevel` の照合も、worktree に対して行う。
+- ファイルは worktree の絶対パスで読む。
+- テストや lint など、カレントディレクトリに依存するコマンドは、同じ呼び出しの中で `(cd <worktree> && <コマンド>)` のようにサブシェルで実行する。
+- `-s` でサブエージェントに渡す作業ディレクトリも、worktree の絶対パスにする。
 
 pr-fullcheck の手順 1 で止まった場合は、その案内をそのまま示して終了する。
 
@@ -156,7 +165,7 @@ pending のコメントは REST API の PATCH では編集できない（404 に
 指摘の本文はチャットに繰り返さず、次だけを短く書く。
 
 - **Summary**: 推奨（Approve / Comment / Request changes）と、その理由を 1〜2 文。投稿した件数（区分ごと）と、pending レビューの PR のリンク。submit していないこと。
-- **準備**: worktree の絶対パスと、新しく作ったか既存を使ったか。作業スペースを worktree へ移したこと。`git mkwt` が出した警告（あれば）。
+- **準備**: worktree の絶対パスと、新しく作ったか既存を使ったか。作業スペースを worktree へ移したか。`git mkwt` が出した警告（あれば）。
 - **行に付けられなかった指摘**: 1 件ずつ、区分と内容を 1 行で。
 - **投稿しなかった指摘**: 除外の理由ごとに件数と、代表的なものを一言。
 - **資料**: 読んだ資料（1 次・2 次の段ごとのリンク）と、読めなかった資料とその理由、取得しなかった 3 次資料。未充足の受入条件、資料の更新漏れ、資料に無い変更で PR 本文に説明が無いものがあれば、ここに書く。
