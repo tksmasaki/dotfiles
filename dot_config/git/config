@@ -10,3 +10,5 @@
 	excludesfile = ~/.config/git/ignore
 [ghq]
 	root = ~/src
+[include]
+	path = ~/.config/git/config.local
