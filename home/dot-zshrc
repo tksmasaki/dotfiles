@@ -46,10 +46,8 @@ eval "$(zoxide init zsh)"
 # ============================== End zoxide
 
 # ============================== aliases
-# Claude Code の Bash は非対話 zsh で動き、ZLE 依存の abbr が展開されないため alias も定義する
 ab() {
 	abbr -S "$@"
-	[[ -n $CLAUDECODE ]] && alias -- "${@[-1]}"
 }
 abbr -S -f ls='ls -F --color=auto'
 abbr -S -f cp='cp -i'
