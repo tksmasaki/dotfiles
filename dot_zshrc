@@ -19,6 +19,11 @@ export LESS='-giXRMS'
 export ABBR_QUIETER=1
 export ABBR_SET_EXPANSION_CURSOR=1
 
+# ============================== Homebrew
+# mise が言語の処理系を前に積むので、先に通す
+eval "$(/opt/homebrew/bin/brew shellenv)"
+# ============================== End Homebrew
+
 # ============================== version manager
 # https://mise.jdx.dev
 eval "$(mise activate zsh)"

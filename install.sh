@@ -24,21 +24,10 @@ else
 	echo "Homebrew is already installed"
 fi
 
-# https://sheldon.cli.rs
-if ! command -v sheldon > /dev/null 2>&1; then
-	echo "Install sheldon"
-	brew install sheldon
-else
-	echo "sheldon is already installed"
-fi
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# https://mise.jdx.dev
-if ! command -v mise > /dev/null 2>&1; then
-  echo "Install mise"
-	brew install mise
-else
-	echo "mise is already installed"
-fi
+echo "Install Homebrew packages"
+brew bundle --file "$SCRIPT_DIR/Brewfile"
 
 if ! command -v chezmoi > /dev/null 2>&1; then
 	echo "Install chezmoi"
@@ -52,21 +41,6 @@ if [[ ! -d "/Applications/Alacritty.app" ]]; then
 	echo "Alacritty is not installed. Please install it from: https://github.com/alacritty/alacritty/releases"
 else
 	echo "Alacritty is already installed"
-fi
-
-# https://github.com/yuru7/HackGen
-if [[ ! -f "$HOME/Library/Fonts/HackGenConsoleNF-Regular.ttf" ]]; then
-	echo "Install HackGen Console NF"
-	brew install --cask font-hackgen-nerd
-else
-	echo "HackGen Console NF is already installed"
-fi
-
-if ! command -v herdr > /dev/null 2>&1; then
-	echo "Install herdr"
-  brew install herdr
-else
-	echo "herdr is already installed"
 fi
 
 echo "Apply dotfiles with chezmoi"
@@ -88,7 +62,6 @@ mise install --cd ~
 # Run local setup if --local option was specified
 if [[ "$LOCAL_SETUP" = true ]]; then
   echo "Running local setup..."
-	SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   "$SCRIPT_DIR/setup_for_local.sh"
 fi
 

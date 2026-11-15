@@ -25,8 +25,8 @@ NOTIFICATIONS_URL="https://github.com/notifications"
 NOTIFY_REASONS='["mention","team_mention","review_requested"]'
 
 # launchd から起動されると PATH が最小限(/usr/bin:/bin 等)になるため、
-# gh(mise 管理)と terminal-notifier(Homebrew)を解決できるよう PATH を補う
-export PATH="${HOME}/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
+# gh と terminal-notifier(Homebrew)を解決できるよう PATH を補う
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
 # ---- ユーティリティ -----------------------------------------------------
 log() {
