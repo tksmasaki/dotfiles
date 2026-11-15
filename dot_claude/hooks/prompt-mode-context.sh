@@ -11,6 +11,7 @@ if [ -z "$mode" ] || [ "$mode" = "default" ]; then
 fi
 
 if ! printf '%s' "$input" | jq -r '.prompt // ""' |
+  perl -0777 -pe 's{<(agent-message|pasted_content|task-notification)\b.*?</\1\b[^>]*>}{}gs' |
   grep -qiE '(^|[^a-z0-9_./-])md([^a-z0-9_]|$)|markdown|マークダウン|ファイルに|書き出|保存して'; then
   exit 0
 fi
