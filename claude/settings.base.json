@@ -51,7 +51,10 @@
       "mcp__ccd_directory__change_directory"
     ],
     "deny": [
-      "Read(**/.env)"
+      "Read(**/.env)",
+      "Read(**/.env_local)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)"
     ],
     "defaultMode": "auto"
   },
