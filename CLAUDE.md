@@ -28,7 +28,7 @@ skill / rules を編集しても実行中のセッションには反映されな
 
 `$HOME` 側にある既存ファイルを管理下に入れるときは `chezmoi add <適用先パス>`。add はソースにコピーを作るだけで、適用先は通常ファイルのまま残るので、続けて `chezmoi apply <適用先パス>` を実行して symlink に置き換える。忘れると `$HOME` 側の編集がソースに反映されない。
 
-symlink にならない管理対象は `~/.claude/settings.json` だけ。`install.sh` は apply 後に通常ファイルとして残った管理対象を列挙して警告する。
+`install.sh` は apply 後に通常ファイルとして残った管理対象を列挙して警告する。
 
 ## Claude Code の設定変更と apply の衝突
 
