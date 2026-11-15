@@ -1,0 +1,31 @@
+[vars]
+dotfiles_dir = "{{config_root}}"
+
+[dotfiles]
+"~/.zshrc" = "home/dot-zshrc"
+"~/.vimrc" = "home/dot-vimrc"
+"~/.claude/statusline.sh" = "home/dot-claude/statusline.sh"
+"~/.claude/settings.json" = { source = "claude/settings.json", mode = "template" }
+"~/.claude/hooks" = { source = "home/dot-claude/hooks", mode = "symlink-each" }
+"~/.claude/skills/settings-review" = { source = "home/dot-claude/skills/settings-review", mode = "symlink-each" }
+"~/.local/bin" = { source = "home/dot-local/bin", mode = "symlink-each" }
+"~/.config/alacritty" = { source = "home/dot-config/alacritty", mode = "symlink-each" }
+"~/.config/git" = { source = "home/dot-config/git", mode = "symlink-each", dot_prefix = true }
+"~/.config/herdr" = { source = "home/dot-config/herdr", mode = "symlink-each" }
+"~/.config/mise" = { source = "home/dot-config/mise", mode = "symlink-each" }
+"~/.config/sheldon" = { source = "home/dot-config/sheldon", mode = "symlink-each" }
+"~/.agents/skills/commit-workflow" = { source = "agents/skills/commit-workflow", mode = "symlink" }
+"~/.agents/skills/copilot-resolve" = { source = "agents/skills/copilot-resolve", mode = "symlink" }
+"~/.agents/skills/explain" = { source = "agents/skills/explain", mode = "symlink" }
+"~/.agents/skills/grill-notes" = { source = "agents/skills/grill-notes", mode = "symlink" }
+"~/.agents/skills/issue-description" = { source = "agents/skills/issue-description", mode = "symlink" }
+"~/.agents/skills/md-output" = { source = "agents/skills/md-output", mode = "symlink" }
+"~/.agents/skills/mkwt" = { source = "agents/skills/mkwt", mode = "symlink" }
+"~/.agents/skills/pr-create" = { source = "agents/skills/pr-create", mode = "symlink" }
+"~/.agents/skills/pr-description" = { source = "agents/skills/pr-description", mode = "symlink" }
+"~/.agents/skills/pr-fullcheck" = { source = "agents/skills/pr-fullcheck", mode = "symlink" }
+"~/.agents/skills/read-sources" = { source = "agents/skills/read-sources", mode = "symlink" }
+"~/.agents/skills/review-code" = { source = "agents/skills/review-code", mode = "symlink" }
+"~/.agents/skills/review-doc" = { source = "agents/skills/review-doc", mode = "symlink" }
+"~/.agents/skills/rv-pr" = { source = "agents/skills/rv-pr", mode = "symlink" }
+"~/.agents/skills/translate" = { source = "agents/skills/translate", mode = "symlink" }

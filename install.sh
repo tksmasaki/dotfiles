@@ -41,7 +41,7 @@ backup_conflicting_files() {
 	local suffix=".bak.$(date +%Y%m%d%H%M%S)"
 	local target
 	for _ in {1..100}; do
-		target="$(mise -C "$SCRIPT_DIR" dotfiles status --json 2>/dev/null | jq -r '
+		target="$(mise -E mac -C "$SCRIPT_DIR" dotfiles status --json 2>/dev/null | jq -r '
 			[.files[]
 				| select(.state == "differs" and (.reason | endswith("exists but is not a symlink")))
 				| ((.reason | capture("^(?<path>.+): exists").path) // .target)]
@@ -58,8 +58,9 @@ backup_conflicting_files() {
 echo "Apply dotfiles with mise"
 git -C "$SCRIPT_DIR" config core.hooksPath .githooks
 mise trust "$SCRIPT_DIR/mise.toml"
+mise trust "$SCRIPT_DIR/mise.mac.toml"
 backup_conflicting_files
-mise -C "$SCRIPT_DIR" dotfiles apply --yes
+mise -E mac -C "$SCRIPT_DIR" dotfiles apply --yes
 
 eval "$(mise activate zsh)"
 echo "Trust mise configuration"

@@ -116,8 +116,8 @@ ab cr='code -r'
 ab dcz='devcontainer exec --remote-env TERM=xterm-256color zsh'
 # dotfiles
 ab dotcd="cd $DOTFILES_DIR"
-ab dotap="mise -C $DOTFILES_DIR dot apply"
-ab dotst="mise -C $DOTFILES_DIR dot status"
+ab dotap="mise -E mac -C $DOTFILES_DIR dot apply"
+ab dotst="mise -E mac -C $DOTFILES_DIR dot status"
 ab cdots="code $DOTFILES_DIR"
 # Alacritty
 ab val='vim ~/.config/alacritty/alacritty.toml'

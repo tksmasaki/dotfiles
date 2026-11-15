@@ -1,6 +1,6 @@
 # dotfiles (mise)
 
-ドットファイルを mise の dotfiles 機能で管理する。適用の定義はリポジトリ直下の `mise.toml` の `[dotfiles]`、適用先は `$HOME`。ツールは `Brewfile` で Homebrew から入れ、mise はリポジトリごとに版を固定する言語の処理系にだけ使う。
+ドットファイルを mise の dotfiles 機能で管理する。適用の定義はリポジトリ直下の `mise.toml` と `mise.mac.toml` の `[dotfiles]`、適用先は `$HOME`。ツールは `Brewfile` で Homebrew から入れ、mise はリポジトリごとに版を固定する言語の処理系にだけ使う。
 
 ## このリポジトリは公開されている
 
@@ -11,16 +11,17 @@
 ## 配置
 
 - `home/` は `$HOME` と同じ並びで置く。`dot-` で始まる名前が `.` で始まる名前に対応する（`home/dot-config/git/config` は `~/.config/git/config`）。
-- 適用先は `mise.toml` に 1 つずつ書く。ファイルは symlink、ディレクトリは `symlink-each` にする。`symlink-each` は管理外のファイルが同居するディレクトリでも、管理するファイルだけをリンクする。`~` そのものを対象にしない。適用先のディレクトリを走査するので、HOME 全体を読んで止まる。
-- `symlink-each` にしたディレクトリにファイルを足すだけなら `mise.toml` は変えない。それ以外の場所にファイルやディレクトリを足したら、`mise.toml` に適用先を足す。
+- 適用先は 2 つのファイルに分けて書く。`mise.toml` には、Claude のクラウド環境でも要るもの（Claude が読む指示・rules・references と、共有の skill の `~/.claude/skills` 側）だけを置く。それ以外（シェルやアプリの設定、`~/.local/bin`、git の設定、`settings.json` と hook、Codex 用の `~/.agents/skills`）は、Mac だけで使うので `mise.mac.toml` に置く。`mise.mac.toml` は `-E mac`（`MISE_ENV=mac`）を付けたときだけ読まれる。
+- 適用先は 1 つずつ書く。ファイルは symlink、ディレクトリは `symlink-each` にする。`symlink-each` は管理外のファイルが同居するディレクトリでも、管理するファイルだけをリンクする。`~` そのものを対象にしない。適用先のディレクトリを走査するので、HOME 全体を読んで止まる。
+- `symlink-each` にしたディレクトリにファイルを足すだけなら、適用先の定義は変えない。それ以外の場所にファイルやディレクトリを足したら、どちらかのファイルに適用先を足す。
 - `claude/` は `~/.claude/settings.json` の生成元。`agents/` は Codex と共有する skill の原本（後述）。
 - `archive/` は使っていない設定の保管場所で、適用しない。
 
 ## 適用
 
 ```bash
-mise -C <リポジトリ> dotfiles apply     # zsh では abbr の dotap
-mise -C <リポジトリ> dotfiles status    # 同じく dotst
+mise -E mac -C <リポジトリ> dotfiles apply     # zsh では abbr の dotap
+mise -E mac -C <リポジトリ> dotfiles status    # 同じく dotst
 ```
 
 `$HOME` 側はソースへの symlink なので、既存ファイルの編集はどちら側からでも即座に反映される。新規追加・リネーム・削除は apply で反映される。`symlink-each` の配下でソースを消すと、次の apply でリンクも消える。
@@ -54,7 +55,7 @@ hook は `home/dot-claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUT
 共有する指示と skill の原本は Codex 側に置き、Claude からはそれを参照する。
 
 - 指示: 原本は `home/dot-codex/AGENTS.md`（`~/.codex/AGENTS.md`）。`home/dot-claude/CLAUDE.md` は `@~/.codex/AGENTS.md` で取り込むだけにする。Claude 固有の指示（Claude Code の道具の扱い）は AGENTS.md に書かず、rules（`claude-tools.md`）に置く。AGENTS.md は Codex の上限 32 KiB に収める。
-- skill: 共有するものの原本は `agents/skills/<名前>` に置き、`mise.toml` で `~/.agents/skills/<名前>` と `~/.claude/skills/<名前>` からフォルダごと symlink する。Codex は symlink になった `SKILL.md` を読まないので、ファイルごとのリンクにしない。
+- skill: 共有するものの原本は `agents/skills/<名前>` に置き、`~/.claude/skills/<名前>`（`mise.toml`）と `~/.agents/skills/<名前>`（`mise.mac.toml`）からフォルダごと symlink する。Codex は symlink になった `SKILL.md` を読まないので、ファイルごとのリンクにしない。
 - Claude 固有の道具（Artifact、Claude Docs、組み込みの code-review、セッションログ）が手順の中心にある skill は共有しない。共有する skill で Claude 固有の道具に触れる箇所は、「使える質問の道具（Claude Code では AskUserQuestion）」のように目的で書き、道具が無い環境での振る舞いを添える。
 - 手動起動専用の skill は、SKILL.md の `disable-model-invocation: true`（Claude 向け）と `agents/openai.yaml` の `policy.allow_implicit_invocation: false`（Codex 向け）の両方を書く。Claude は `openai.yaml` を読まない。
 - `~/.agents/skills` と `~/.claude/skills` には `npx skills` が入れた skill も同居する。リポジトリの管理外なので消さない。
@@ -63,4 +64,4 @@ hook は `home/dot-claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUT
 ## 新しいマシン
 
 - macOS: リポジトリを複製して `install.sh` を実行する。Homebrew・Brewfile の導入、dotfiles の適用、mise の処理系の導入までを行う。
-- クラウド環境: `cloud-setup.sh` の中身を環境のセットアップスクリプトに貼る。リポジトリの複製より前に動くので、mise のバイナリを GitHub Releases から直接取る。版は手動で更新する。
+- Claude のクラウド環境: `cloud-setup.sh` の中身を環境のセットアップスクリプトに貼る。`mise.toml` の分だけを適用し、`settings.json` や hook はクラウド環境の設定のまま残す。リポジトリの複製より前に動くので、mise のバイナリを GitHub Releases から直接取る。版は手動で更新する。
