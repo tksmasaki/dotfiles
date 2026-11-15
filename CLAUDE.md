@@ -75,6 +75,6 @@ hook は `dot_claude/hooks/lib/claude-env.sh` を `source` し、`AGENT_AUTO_COM
 
 - skill: 共有するものだけ `dot_agents/skills/symlink_<名前>.tmpl` を置き、`~/.agents/skills/<名前>` からソースの `dot_claude/skills/<名前>` へ symlink する。`~/.claude/skills/<名前>` を指さないのは、Codex がフォルダの symlink はたどるのに、symlink になった `SKILL.md` は読まないため。Claude 固有の道具（Artifact、Claude Docs、組み込みの code-review、セッションログ）が手順の中心にある skill は共有しない。共有する skill で Claude 固有の道具に触れる箇所は、「使える質問の道具（Claude Code では AskUserQuestion）」のように目的で書き、道具が無い環境での振る舞いを添える。
 - `disable-model-invocation: true` の skill を共有するときは、同じ skill に `agents/openai.yaml` を置き、`policy.allow_implicit_invocation: false` で Codex からの暗黙の呼び出しを止める。
-- 指示: `dot_codex/AGENTS.md.tmpl` が `dot_claude/CLAUDE.md` を取り込んで `~/.codex/AGENTS.md` を作る。Claude 固有の指示（Claude Code の道具やセッションの扱い）は `dot_claude/CLAUDE.md` に書かず、rules（`claude-tools.md`、`session-messages.md`）に置く。`dot_claude/CLAUDE.md` は Codex の上限 32 KiB に収める。
+- 指示: `dot_codex/AGENTS.md.tmpl` が `dot_claude/CLAUDE.md` を取り込んで `~/.codex/AGENTS.md` を作る。Claude 固有の指示（Claude Code の道具の扱い）は `dot_claude/CLAUDE.md` に書かず、rules（`claude-tools.md`）に置く。`dot_claude/CLAUDE.md` は Codex の上限 32 KiB に収める。
 - `~/.agents/skills` には `npx skills` が入れた skill も同居し、Claude 側から symlink されているものがある。chezmoi 管理外なので消さない。
 - hook・権限・MCP は形式が違うので共有しない。
