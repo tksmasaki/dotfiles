@@ -48,7 +48,8 @@
       "Bash(terraform plan *)",
       "Bash(terraform show *)",
       "Bash(terraform validate *)",
-      "mcp__ccd_directory__change_directory"
+      "mcp__ccd_directory__change_directory",
+      "mcp__github__add_comment_to_pending_review"
     ],
     "deny": [
       "Read(**/.env)",
