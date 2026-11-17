@@ -69,7 +69,7 @@ gh pr view <番号> --json body,comments,reviews,closingIssuesReferences
 gh api "repos/{owner}/{repo}/pulls/<番号>/comments" --paginate
 ```
 
-PR 本文と PR のコメントにあるリンク、`closingIssuesReferences` の issue を 1 次資料として、read-sources skill の手順で読む。コメントを絞るときは、PR の変更に関わる箇所に付いたものに絞る。呼べない環境では、この SKILL.md の実体と同じ skills ディレクトリにある `read-sources/SKILL.md` を読んで従う。
+PR 本文と PR のコメントにあるリンク、`closingIssuesReferences` の issue を 1 次資料として、read-sources skill の手順で読む。呼べない環境では、この SKILL.md の実体と同じ skills ディレクトリにある `read-sources/SKILL.md` を読んで従う。
 
 返った一覧は、レポートの「読んだ資料」と「読めなかった資料」に載せる。
 
