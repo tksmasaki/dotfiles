@@ -2,9 +2,13 @@
 
 ## 動作確認のブラウザ
 
-画面を見て行う動作確認は Claude in Chrome で行う。アプリ内のブラウザは使わない。Chrome に接続できないときは、切り替えずに止めて伝える。画面幅を変えた計測や自動実行には Playwright を使ってよい。
+開発中のアプリを画面で動作確認するときは playwright-secrets（Playwright MCP を `--secrets` 付きで起動したもの）で行う。アプリ内のブラウザは使わない。ログインは secrets のキー名を入力欄に渡して行い、値は読まない。
 
-Claude in Chrome が無い環境では、Playwright など別の手段で確認する。どれも無ければ、確認できなかったと伝える。
+playwright-secrets が無い、または接続できないときは Claude in Chrome で確認し、切り替えたことを伝える。どちらも無ければ Playwright など別の手段で確認し、それも無ければ確認できなかったと伝える。
+
+## それ以外のブラウザ確認
+
+開発中のアプリの動作確認以外でブラウザを使うとき（GitHub・Notion などの表示確認、Web ページの閲覧）は Claude in Chrome を使う。playwright-secrets はこれらのサービスにログインしていない。
 
 ## サブエージェントに委譲する
 
