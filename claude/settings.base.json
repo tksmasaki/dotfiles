@@ -55,7 +55,10 @@
       "Read(**/.env)",
       "Read(**/.env_local)",
       "Read(**/.env.local)",
-      "Read(**/.env.*.local)"
+      "Read(**/.env.*.local)",
+      "Read(~/.config/dev-secrets/**)",
+      "Edit(~/.config/dev-secrets/**)",
+      "Bash(*dev-secrets*)"
     ],
     "defaultMode": "auto"
   },
