@@ -156,8 +156,6 @@
     "claude-md-management@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "hookify@claude-plugins-official": false,
-    "frontend-design@claude-plugins-official": false,
     "1password@1password": true
   },
   "extraKnownMarketplaces": {
