@@ -12,11 +12,11 @@
 "~/.claude/skills/mkwt" = { source = "agents/skills/mkwt", mode = "symlink" }
 "~/.claude/skills/pr-create" = { source = "agents/skills/pr-create", mode = "symlink" }
 "~/.claude/skills/pr-description" = { source = "agents/skills/pr-description", mode = "symlink" }
-"~/.claude/skills/pr-fullcheck" = { source = "agents/skills/pr-fullcheck", mode = "symlink" }
+"~/.claude/skills/pr-pending-review" = { source = "agents/skills/pr-pending-review", mode = "symlink" }
 "~/.claude/skills/pr-recommit" = { source = "agents/skills/pr-recommit", mode = "symlink" }
+"~/.claude/skills/pr-review" = { source = "agents/skills/pr-review", mode = "symlink" }
 "~/.claude/skills/read-sources" = { source = "agents/skills/read-sources", mode = "symlink" }
 "~/.claude/skills/review-code" = { source = "agents/skills/review-code", mode = "symlink" }
 "~/.claude/skills/review-doc" = { source = "agents/skills/review-doc", mode = "symlink" }
-"~/.claude/skills/rv-pr" = { source = "agents/skills/rv-pr", mode = "symlink" }
 "~/.claude/skills/settings-review" = { source = "agents/skills/settings-review", mode = "symlink" }
 "~/.claude/skills/translate" = { source = "agents/skills/translate", mode = "symlink" }

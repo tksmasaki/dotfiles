@@ -48,8 +48,7 @@
       "Bash(terraform plan *)",
       "Bash(terraform show *)",
       "Bash(terraform validate *)",
-      "mcp__ccd_directory__change_directory",
-      "mcp__github__add_comment_to_pending_review"
+      "mcp__ccd_directory__change_directory"
     ],
     "deny": [
       "Read(**/.env)",
@@ -96,16 +95,6 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/zsh-modifier-guard.sh",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__.*__(add_comment_to_pending_review|pull_request_review_write)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/allow-pending-review.sh",
             "timeout": 10
           }
         ]
