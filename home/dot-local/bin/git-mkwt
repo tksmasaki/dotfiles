@@ -53,6 +53,9 @@ Usage:
   既存の worktree を再利用するときは、ENV_FILES・ENV_TEMPLATE・LINK_PATHS のうち
   worktree 側に無いものだけを足す。LOCAL_PATCH_FILES・SETUP_COMMANDS・mkwt_notes は動かさない。
 
+  PR のブランチが配置先の外の worktree（エディタやエージェントが作ったもの）でチェックアウト
+  済みのときは、その worktree に LINK_PATHS のうち無いものだけを足してから、エラーで終える。
+
   MKWT_SKIP_SETUP=1 を渡すと SETUP_COMMANDS を実行せず、案内だけ出す。
 
   引き継ぐのはブランチの内容に依存しない個人ファイルだけにする。node_modules のような
@@ -106,6 +109,43 @@ case "$(basename "$MAIN_ROOT")" in
   main|*-main) WT_BASE="$(dirname "$MAIN_ROOT")" ;;
   *)           WT_BASE="${MAIN_ROOT}.worktrees" ;;
 esac
+
+LINK_PATHS=(.claude/settings.local.json CLAUDE.local.md)
+ENV_TEMPLATE=""
+ENV_FILES=()
+LOCAL_PATCH_FILES=()
+SETUP_COMMANDS=()
+
+CONF="$GIT_COMMON_DIR/mkwt.conf"
+if [ -f "$CONF" ]; then
+  # shellcheck disable=SC1090
+  source "$CONF"
+fi
+
+link_into_worktree() {
+  local src="$2" dest="$1/${2#"$MAIN_ROOT"/}"
+  [ -e "$src" ] || return 0
+  [ -e "$dest" ] || [ -L "$dest" ] && return 0
+  mkdir -p "$(dirname "$dest")"
+  ln -s "$src" "$dest"
+  LINKED+=("${src#"$MAIN_ROOT"/}")
+}
+
+# glob を効かせるため $p はクォートしない。空白入りのパスが分割されないよう、IFS は改行だけにする
+link_paths_into() {
+  LINKED=()
+  [ "${#LINK_PATHS[@]}" -gt 0 ] || return 0
+  shopt -s nullglob
+  local old_ifs="$IFS" p src
+  IFS=$'\n'
+  for p in "${LINK_PATHS[@]}"; do
+    for src in "$MAIN_ROOT"/$p; do
+      link_into_worktree "$1" "$src"
+    done
+  done
+  IFS="$old_ifs"
+  shopt -u nullglob
+}
 
 IS_PR=false
 PR_NUMBER=''
@@ -166,6 +206,15 @@ if $IS_PR; then
 
   IN_USE="$(worktree_using_branch "$BRANCH")"
   if [ -n "$IN_USE" ] && [ "$IN_USE" != "$WT_DIR" ]; then
+    [ -d "$IN_USE" ] \
+      || die "ブランチ $BRANCH は $IN_USE の worktree に登録されていますが、ディレクトリがありません。git worktree prune で登録を消してから実行し直してください"
+    link_paths_into "$IN_USE"
+    if [ "${#LINKED[@]}" -gt 0 ]; then
+      log "$IN_USE に次をリンクしました"
+      for p in "${LINKED[@]}"; do
+        log "  $p"
+      done
+    fi
     die "ブランチ $BRANCH は既に $IN_USE でチェックアウトされています。そちらで作業してください"
   fi
 
@@ -247,18 +296,6 @@ else
   fi
 fi
 
-LINK_PATHS=(.claude/settings.local.json CLAUDE.local.md)
-ENV_TEMPLATE=""
-ENV_FILES=()
-LOCAL_PATCH_FILES=()
-SETUP_COMMANDS=()
-
-CONF="$GIT_COMMON_DIR/mkwt.conf"
-if [ -f "$CONF" ]; then
-  # shellcheck disable=SC1090
-  source "$CONF"
-fi
-
 if [ "${#ENV_FILES[@]}" -gt 0 ]; then
   for f in "${ENV_FILES[@]}"; do
     # -e はリンク先を見るため、壊れたリンクが残っていると「無い」と誤判定する。-L も見る
@@ -276,27 +313,7 @@ if [ -n "$ENV_TEMPLATE" ] && [ -f "$MAIN_ROOT/$ENV_TEMPLATE" ] \
   ENV_FROM_TEMPLATE=true
 fi
 
-link_into_worktree() {
-  local src="$1" dest="$WT_DIR/${1#"$MAIN_ROOT"/}"
-  [ -e "$src" ] || return 0
-  [ -e "$dest" ] || [ -L "$dest" ] && return 0
-  mkdir -p "$(dirname "$dest")"
-  ln -s "$src" "$dest"
-}
-
-# glob を効かせるため $p はクォートしない。空白入りのパスが分割されないよう、IFS は改行だけにする
-if [ "${#LINK_PATHS[@]}" -gt 0 ]; then
-  shopt -s nullglob
-  OLD_IFS="$IFS"
-  IFS=$'\n'
-  for p in "${LINK_PATHS[@]}"; do
-    for src in "$MAIN_ROOT"/$p; do
-      link_into_worktree "$src"
-    done
-  done
-  IFS="$OLD_IFS"
-  shopt -u nullglob
-fi
+link_paths_into "$WT_DIR"
 
 # skip-worktree が付いていると git diff は差分を報告しないので、HEAD の内容と直接比べる
 differs_from_head() {
