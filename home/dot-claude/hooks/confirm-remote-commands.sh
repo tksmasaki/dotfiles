@@ -12,6 +12,11 @@
 #   - npm|yarn|pnpm publish / gem push / docker push
 #   - kubectl apply|delete / terraform apply|destroy / gcloud ... deploy / cap ... deploy
 #
+# AGENT_AUTO_PUSH が "1" のとき、単独の git push で、push する範囲が自分のコミットだけ、
+# かつ PR に bot 以外の他者のレビューが無ければ、確認なしで通す（判定は lib/own-push.sh）。
+# toggle-auto-push で切り替える。値の解決順は lib/claude-env.sh。"1" 以外と、設定を
+# 読めないときは確認を求める。
+#
 # CLAUDE_SKIP_REMOTE_CONFIRM=1 のとき、この検知自体を無効化して通常のパーミッション
 # 判定に委ねる（toggle-remote-confirm off で立てる。ローカルでフックの挙動を検証する
 # ための一時的な無効化で、立てたままにすると push やデプロイ系も確認なしで通る）。
@@ -22,6 +27,8 @@ set -euo pipefail
 
 # shellcheck source=lib/claude-env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/claude-env.sh"
+# shellcheck source=lib/own-push.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/own-push.sh"
 
 input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // ""')"
@@ -76,6 +83,20 @@ if [ "$skip_remote_confirm" = "1" ]; then
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         additionalContext: ("CLAUDE_SKIP_REMOTE_CONFIRM=1 が有効なため confirm-remote-commands の検知をスキップした（対象コマンド: " + $c + "）。ユーザーに検証用の一時設定である旨を伝えること。")
+      }
+    }
+  '
+  exit 0
+fi
+
+auto_push="$(claude_env_current AGENT_AUTO_PUSH "$cwd")" || auto_push=""
+if [ "$auto_push" = "1" ] && own_push_allowed "$cmd" "$cwd"; then
+  jq -n --arg r "$OWN_PUSH_REASON" '
+    {
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "allow",
+        permissionDecisionReason: $r
       }
     }
   '
