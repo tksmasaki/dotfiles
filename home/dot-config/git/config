@@ -6,9 +6,14 @@
 	ui = auto
 [commit]
 	template = ~/.config/git/.gitmessage.txt
+	gpgsign = true
 [core]
 	excludesfile = ~/.config/git/ignore
 [ghq]
 	root = ~/src
 [include]
 	path = ~/.config/git/config.local
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
