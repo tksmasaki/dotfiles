@@ -6,5 +6,6 @@
 .mcp.json
 .envrc
 mise.local.toml
+/REVIEW.md
 
 **/.claude/settings.local.json

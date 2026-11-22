@@ -39,7 +39,7 @@ Usage:
 
     LINK_PATHS=(...)        メイン作業ツリーから symlink で引き継ぐパス。glob を書ける
                             （例: '.claude/skills/*'）。worktree 側に既にあるものは触らない
-                            既定は (.claude/settings.local.json CLAUDE.local.md)。代入すると
+                            既定は (.claude/settings.local.json CLAUDE.local.md REVIEW.md)。代入すると
                             既定は置き換わるので、残したいものも並べる
     ENV_TEMPLATE=".env_local"  worktree の .env としてコピーする雛形（既定は空 = 無効）
     ENV_FILES=(...)         名前を変えずにコピーするファイル（既定は空）
@@ -110,7 +110,7 @@ case "$(basename "$MAIN_ROOT")" in
   *)           WT_BASE="${MAIN_ROOT}.worktrees" ;;
 esac
 
-LINK_PATHS=(.claude/settings.local.json CLAUDE.local.md)
+LINK_PATHS=(.claude/settings.local.json CLAUDE.local.md REVIEW.md)
 ENV_TEMPLATE=""
 ENV_FILES=()
 LOCAL_PATCH_FILES=()
