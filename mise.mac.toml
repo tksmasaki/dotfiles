@@ -23,6 +23,7 @@ dotfiles_dir = "{{config_root}}"
 "~/.agents/skills/pr-create" = { source = "agents/skills/pr-create", mode = "symlink" }
 "~/.agents/skills/pr-description" = { source = "agents/skills/pr-description", mode = "symlink" }
 "~/.agents/skills/pr-fullcheck" = { source = "agents/skills/pr-fullcheck", mode = "symlink" }
+"~/.agents/skills/pr-recommit" = { source = "agents/skills/pr-recommit", mode = "symlink" }
 "~/.agents/skills/read-sources" = { source = "agents/skills/read-sources", mode = "symlink" }
 "~/.agents/skills/review-code" = { source = "agents/skills/review-code", mode = "symlink" }
 "~/.agents/skills/review-doc" = { source = "agents/skills/review-doc", mode = "symlink" }
