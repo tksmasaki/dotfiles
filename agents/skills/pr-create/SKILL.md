@@ -1,6 +1,6 @@
 ---
 name: pr-create
-description: GitHub の PR を新しく作るときの手順。draft の扱い、ready に上げる条件、既定ブランチ以外を base にした PR の issue の紐付けを決める。「PR を作って」と言われたとき、`gh pr create` を実行する前、ユーザーに PR の作成を促す前に使う。
+description: GitHub の PR を新しく作るときの手順。draft の扱い、ready に上げる条件、既定ブランチ以外を base にした PR の issue の紐付けを決める。「PR を作って」と言われたとき、PR を作る前、ユーザーに PR の作成を促す前に使う。
 ---
 
 # PR を作る

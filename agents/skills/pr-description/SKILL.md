@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: GitHub の PR description（body）を書く・更新するときの形式と手順。「PR の説明を書いて」「description を更新して」と言われたとき、`gh pr create` / `gh pr edit --body` / MCP の `update_pull_request` を実行する前、/pr-description で PR を指定されたときに使う。
+description: GitHub の PR description（body）を書く・更新するときの形式と手順。「PR の説明を書いて」「description を更新して」と言われたとき、PR を作る・body を更新する前、/pr-description で PR を指定されたときに使う。
 argument-hint: "[PR番号 or GitHub URL]（省略時は現在のブランチの PR）"
 ---
 
