@@ -58,7 +58,21 @@
       "Read(**/.env.*.local)",
       "Read(~/.config/dev-secrets/**)",
       "Edit(~/.config/dev-secrets/**)",
-      "Bash(*dev-secrets*)"
+      "Bash(*dev-secrets*)",
+      "Bash(*PLAYWRIGHT_MCP_SECRETS_FILE*)",
+      "Bash(playwright-cli *cookie-get*)",
+      "Bash(playwright-cli *cookie-list*)",
+      "Bash(playwright-cli *localstorage-get*)",
+      "Bash(playwright-cli *localstorage-list*)",
+      "Bash(playwright-cli *sessionstorage-get*)",
+      "Bash(playwright-cli *sessionstorage-list*)",
+      "Bash(playwright-cli *state-save*)",
+      "Bash(playwright-cli *request *)",
+      "Bash(playwright-cli *request-headers*)",
+      "Bash(playwright-cli *response-headers*)",
+      "Bash(playwright-cli *request-body*)",
+      "Bash(playwright-cli *response-body*)",
+      "Bash(playwright-cli *run-code*)"
     ],
     "defaultMode": "auto"
   },
@@ -142,7 +156,6 @@
     "claude-md-management@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
     "hookify@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
     "1password@1password": true

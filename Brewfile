@@ -15,6 +15,7 @@ brew "shfmt"
 brew "pre-commit"
 brew "uv"
 brew "awscli"
+brew "playwright-cli"
 
 # コンテナ
 brew "colima"

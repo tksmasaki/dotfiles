@@ -2,13 +2,17 @@
 
 ## 動作確認のブラウザ
 
-開発中のアプリを画面で動作確認するときは playwright-secrets（Playwright MCP を `--secrets` 付きで起動したもの）で行う。アプリ内のブラウザは使わない。ログインは secrets のキー名を入力欄に渡して行い、値は読まない。
+開発中のアプリを画面で動作確認するときは playwright-cli（`playwright-cli` skill）で行う。アプリ内のブラウザは使わない。ログインは secrets のキー名を `fill` に渡して行い、値は読まない。secrets ファイルは環境変数 `PLAYWRIGHT_MCP_SECRETS_FILE` で渡してある。この変数とファイルの中身は読まない。
 
-playwright-secrets が無い、または接続できないときは Claude in Chrome で確認し、切り替えたことを伝える。どちらも無ければ Playwright など別の手段で確認し、それも無ければ確認できなかったと伝える。
+- 開くときは `-s=<名前> open --headed` にする。ユーザーが同じ窓を見て操作を引き取れるようにするため
+- 確認が終わっても `close` しない。ユーザーが結果を見るため
+- Cookie・ストレージ・リクエストのヘッダーを出すサブコマンドは deny にしてある。`eval` でもそれらの値を読まない
+
+playwright-cli が無いときは Claude in Chrome で確認し、切り替えたことを伝える。どちらも無ければ確認できなかったと伝える。secrets のキー名で `fill` してもログインできない（キー名がそのまま入力される）ときは、ログインをユーザーに頼むか Claude in Chrome に切り替える。ログインの要らない確認では切り替えない。
 
 ## それ以外のブラウザ確認
 
-開発中のアプリの動作確認以外でブラウザを使うとき（GitHub・Notion などの表示確認、Web ページの閲覧）は Claude in Chrome を使う。playwright-secrets はこれらのサービスにログインしていない。
+開発中のアプリの動作確認以外でブラウザを使うとき（GitHub・Notion などの表示確認、Web ページの閲覧）は Claude in Chrome を使う。playwright-cli のブラウザはこれらのサービスにログインしていない。
 
 ## サブエージェントに委譲する
 
