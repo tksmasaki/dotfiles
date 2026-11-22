@@ -28,5 +28,6 @@ dotfiles_dir = "{{config_root}}"
 "~/.agents/skills/read-sources" = { source = "agents/skills/read-sources", mode = "symlink" }
 "~/.agents/skills/review-code" = { source = "agents/skills/review-code", mode = "symlink" }
 "~/.agents/skills/review-doc" = { source = "agents/skills/review-doc", mode = "symlink" }
+"~/.agents/skills/curate-review-points" = { source = "agents/skills/curate-review-points", mode = "symlink" }
 "~/.agents/skills/settings-review" = { source = "agents/skills/settings-review", mode = "symlink" }
 "~/.agents/skills/translate" = { source = "agents/skills/translate", mode = "symlink" }

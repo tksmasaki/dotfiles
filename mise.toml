@@ -18,5 +18,6 @@
 "~/.claude/skills/read-sources" = { source = "agents/skills/read-sources", mode = "symlink" }
 "~/.claude/skills/review-code" = { source = "agents/skills/review-code", mode = "symlink" }
 "~/.claude/skills/review-doc" = { source = "agents/skills/review-doc", mode = "symlink" }
+"~/.claude/skills/curate-review-points" = { source = "agents/skills/curate-review-points", mode = "symlink" }
 "~/.claude/skills/settings-review" = { source = "agents/skills/settings-review", mode = "symlink" }
 "~/.claude/skills/translate" = { source = "agents/skills/translate", mode = "symlink" }
