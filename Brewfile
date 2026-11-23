@@ -1,4 +1,5 @@
 # シェルと dotfiles
+brew "bash"
 brew "sheldon"
 brew "mise"
 brew "starship"

@@ -14,6 +14,7 @@
 - 適用先は 2 つのファイルに分けて書く。`mise.toml` には、Claude のクラウド環境でも要るもの（Claude が読む指示・rules・references と、共有の skill の `~/.claude/skills` 側）だけを置く。それ以外（シェルやアプリの設定、`~/.local/bin`、git の設定、`settings.json` と hook、Codex 用の `~/.agents/skills`）は、Mac で適用するため `mise.mac.toml` に置く。`mise.mac.toml` は `-E mac`（`MISE_ENV=mac`）を付けたときだけ読まれる。
 - 適用先は 1 つずつ書く。ファイルは symlink、ディレクトリは `symlink-each` にする。`symlink-each` は管理外のファイルが同居するディレクトリでも、管理するファイルだけをリンクする。`~` そのものを対象にしない。適用先のディレクトリを走査するので、HOME 全体を読んで止まる。
 - `symlink-each` にしたディレクトリにファイルを足すだけなら、適用先の定義は変えない。それ以外の場所にファイルやディレクトリを足したら、どちらかのファイルに適用先を足す。
+- `home/dot-bashrc` と `home/dot-bash_profile` は Claude Code の Bash ツール用。対話シェルは zsh で、Claude だけが `settings.base.json` の `CLAUDE_CODE_SHELL` で bash を使う。
 - `claude/` は `~/.claude/settings.json` の生成元。`agents/` は Codex と共有する skill の原本（後述）。
 - `archive/` は使っていない設定の保管場所で、適用しない。
 

@@ -3,6 +3,8 @@ dotfiles_dir = "{{config_root}}"
 
 [dotfiles]
 "~/.zshrc" = "home/dot-zshrc"
+"~/.bashrc" = "home/dot-bashrc"
+"~/.bash_profile" = "home/dot-bash_profile"
 "~/.vimrc" = "home/dot-vimrc"
 "~/.claude/statusline.sh" = "home/dot-claude/statusline.sh"
 "~/.claude/settings.json" = { source = "claude/settings.json", mode = "template" }
