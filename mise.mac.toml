@@ -7,6 +7,7 @@ dotfiles_dir = "{{config_root}}"
 "~/.bash_profile" = "home/dot-bash_profile"
 "~/.vimrc" = "home/dot-vimrc"
 "~/.claude/statusline.sh" = "home/dot-claude/statusline.sh"
+"~/.claude/bash-env.sh" = "home/dot-claude/bash-env.sh"
 "~/.claude/settings.json" = { source = "claude/settings.json", mode = "template" }
 "~/.claude/hooks" = { source = "home/dot-claude/hooks", mode = "symlink-each" }
 "~/.local/bin" = { source = "home/dot-local/bin", mode = "symlink-each" }

@@ -17,7 +17,8 @@ jq \
   --argjson env "$(read_json "${local_dir}/env.json" '{}')" \
   --argjson plugins "$(read_json "${local_dir}/plugins.json" '{}')" \
   --argjson denied "$(read_json "${local_dir}/denied-mcp-servers.json" 'null')" \
-  '.env += $env
+  '.env.CLAUDE_ENV_FILE = env.HOME + "/.claude/bash-env.sh"
+   | .env += $env
    | .enabledPlugins += $plugins
    | if $denied == null then . else .deniedMcpServers = $denied end' \
   "${base}"
